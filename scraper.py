@@ -1,26 +1,32 @@
+import os
 import requests
 from bs4 import BeautifulSoup
 import datetime
 import mysql.connector
 import sys
+from dotenv import load_dotenv
+
+# --- CHARGEMENT DU .ENV ---
+load_dotenv()
 
 # --- CONFIGURATION ---
+# J'ai mis à jour les sources pour inclure le mix SLAM (Dev) et SISR (Cyber)
 SOURCES = {
-    "Le Monde Informatique": "https://www.lemondeinformatique.fr/flux-rss/rubrique/cybersecurite/rss.xml",
-    "ANSSI (CERT-FR)": "https://www.cert.ssi.gouv.fr/feed/",
-    "Zataz": "https://www.zataz.com/feed/",
-    "ZDNet France": "https://www.zdnet.fr/feeds/rss/actualites/security/",
-    "Cyberguerre (Numerama)": "https://www.numerama.com/cyberguerre/feed/"
+    "[CYBER] ANSSI (CERT-FR)": "https://www.cert.ssi.gouv.fr/feed/",
+    "[CYBER] Le Monde Informatique": "https://www.lemondeinformatique.fr/flux-rss/rubrique/cybersecurite/rss.xml",
+    "[CYBER] Zataz": "https://www.zataz.com/feed/",
+    "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
+    "[DEV] Human Coders": "https://news.humancoders.com/items/feed"
 }
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 
 # ⚠️ METS TON MOT DE PASSE MYSQL ICI
 DB_CONFIG = {
-    'host': 'localhost',
-    'user': 'root',
-    'password': 'admin', 
-    'database': 'veille_tech'
+    'host': os.getenv('DB_HOST'),
+    'user': os.getenv('DB_USER'),
+    'password': os.getenv('DB_PASSWORD'), 
+    'database': os.getenv('DB_NAME')
 }
 
 def recuperer_xml(url):
