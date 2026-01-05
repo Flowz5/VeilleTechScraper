@@ -1,0 +1,11 @@
+CREATE DATABASE IF NOT EXISTS veille_tech;
+USE veille_tech;
+
+CREATE TABLE IF NOT EXISTS articles (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    date DATE NOT NULL,
+    source VARCHAR(100),
+    titre VARCHAR(255),
+    lien VARCHAR(255) UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
