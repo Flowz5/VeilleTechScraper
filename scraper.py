@@ -4,7 +4,7 @@ import datetime
 
 # --- CONFIGURATION ---
 # On cible la rubrique Cybersécurité
-URL_CIBLE = "https://www.lemondeinformatique.fr/actualites/rubrique-cybersecurite-24.html"
+URL_CIBLE = "https://www.lemondeinformatique.fr/flux-rss/rubrique/cybersecurite/rss.xml"# On se fait passer pour un vrai navigateur (indispensable pour ne pas être bloqué)
 # On se fait passer pour un vrai navigateur (indispensable pour ne pas être bloqué)
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 
@@ -19,47 +19,25 @@ def recuperer_html(url):
         print(f"❌ Erreur réseau : {e}")
         return None
 
-def parser_articles(html):
-    """Analyse le HTML et extrait les articles."""
-    soup = BeautifulSoup(html, 'html.parser')
+def parser_articles(xml):
+    """Analyse le flux RSS et extrait les articles."""
+    # On utilise 'xml' au lieu de 'html.parser' pour lire du RSS
+    soup = BeautifulSoup(xml, 'xml') 
     
-    # Sélecteur pour LeMondeInformatique (div col-md-12 contient souvent les news)
-    articles_bruts = soup.find_all('div', class_='col-md-12')
-    
+    items = soup.find_all('item')
     resultats = []
-
-    print(f"🔍 Analyse HTML en cours...")
     
-    for article in articles_bruts:
-        try:
-            # 1. On cherche le Titre (souvent dans un <h3>)
-            titre_balise = article.find('h3')
-            if not titre_balise:
-                continue # Si pas de titre, ce n'est pas un article
-                
-            titre = titre_balise.get_text().strip()
-            
-            # 2. On cherche le Lien
-            lien_balise = article.find('a')
-            if lien_balise:
-                lien = lien_balise['href']
-                # Si le lien est relatif (ex: /article/...), on ajoute le domaine
-                if not lien.startswith('http'):
-                    lien = "https://www.lemondeinformatique.fr" + lien
-            else:
-                lien = "N/A"
-
-            # 3. On ajoute à notre liste de résultats
-            resultats.append({
-                "titre": titre,
-                "lien": lien,
-                "date": datetime.date.today()
-            })
-            
-        except Exception as e:
-            # On ignore les erreurs mineures pour ne pas arrêter le script
-            continue
-
+    for item in items:
+        titre = item.title.text
+        lien = item.link.text
+        # La date est souvent dans <pubDate>
+        
+        resultats.append({
+            "titre": titre,
+            "lien": lien,
+            "date": datetime.date.today()
+        })
+        
     return resultats
 
 def main():
