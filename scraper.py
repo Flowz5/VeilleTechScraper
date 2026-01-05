@@ -1,16 +1,22 @@
 import requests
 from bs4 import BeautifulSoup
 import datetime
-import csv  # Nécessaire pour créer le fichier Excel
+import mysql.connector # <--- Le nouveau pilote
 
 # --- CONFIGURATION ---
-# On cible le flux RSS Cybersécurité (plus fiable que le HTML)
 URL_CIBLE = "https://www.lemondeinformatique.fr/flux-rss/rubrique/cybersecurite/rss.xml"
-# On se fait passer pour un vrai navigateur
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 
+# ⚠️ À MODIFIER SELON TA CONFIGURATION LOCALE DBeaver/MySQL
+DB_CONFIG = {
+    'host': 'localhost',
+    'user': 'root',        # Souvent 'root' ou ton nom d'utilisateur
+    'password': 'admin', # <--- METS TON MOT DE PASSE ICI
+    'database': 'veille_tech'
+}
+
 def recuperer_html(url):
-    """Télécharge le code source (ici le XML du RSS)."""
+    """Télécharge le XML."""
     headers = {'User-Agent': USER_AGENT}
     try:
         response = requests.get(url, headers=headers, timeout=10)
@@ -21,76 +27,87 @@ def recuperer_html(url):
         return None
 
 def parser_articles(xml):
-    """Analyse le flux RSS et extrait les articles."""
+    """Extrait les articles du XML."""
     soup = BeautifulSoup(xml, 'xml') 
-    
     items = soup.find_all('item')
     resultats = []
     
     for item in items:
-        titre = item.title.text
-        lien = item.link.text
-        # Pour simplifier, on prend la date du jour de l'exécution
-        date_jour = datetime.date.today()
+        # Conversion de la date pour MySQL (YYYY-MM-DD)
+        date_jour = datetime.date.today().strftime('%Y-%m-%d')
         
         resultats.append({
-            "titre": titre,
-            "lien": lien,
+            "titre": item.title.text[:255], # On coupe si > 255 car VARCHAR(255)
+            "lien": item.link.text[:255],
             "date": date_jour
         })
-        
     return resultats
 
-def sauvegarder_csv(articles):
-    """Sauvegarde les articles dans un fichier CSV (compatible Excel)."""
-    nom_fichier = "veille_cybersecurite.csv"
-    
-    # Vérification : est-ce que le fichier existe déjà ?
-    fichier_existe = False
+def sauvegarder_mysql(articles):
+    """Insère les articles dans MySQL."""
+    conn = None
     try:
-        with open(nom_fichier, 'r', encoding='utf-8') as f:
-            fichier_existe = True
-    except FileNotFoundError:
-        fichier_existe = False
-
-    # Mode 'a' (append) pour ajouter à la suite sans effacer l'historique
-    with open(nom_fichier, mode='a', newline='', encoding='utf-8') as f:
-        # Le délimiteur ';' est important pour qu'Excel reconnaisse les colonnes en France
-        writer = csv.writer(f, delimiter=';')
+        conn = mysql.connector.connect(**DB_CONFIG)
+        cursor = conn.cursor()
         
-        # Si le fichier est tout neuf, on écrit la première ligne (les titres)
-        if not fichier_existe:
-            writer.writerow(["Date", "Titre", "Lien"])
-            
-        # On écrit chaque article
-        compteur = 0
+        ajouts = 0
+        
         for art in articles:
-            writer.writerow([art['date'], art['titre'], art['lien']])
-            compteur += 1
+            # Syntaxe MySQL : INSERT IGNORE permet de ne pas planter si le lien existe déjà
+            # Et on utilise %s pour les variables (pas ?)
+            query = "INSERT IGNORE INTO articles (date, titre, lien) VALUES (%s, %s, %s)"
+            valeurs = (art['date'], art['titre'], art['lien'])
             
-    print(f"💾 {compteur} articles sauvegardés dans le fichier '{nom_fichier}'")
+            cursor.execute(query, valeurs)
+            
+            # rowcount vaut 1 si inséré, 0 si ignoré (doublon)
+            if cursor.rowcount > 0:
+                ajouts += 1
+                
+        conn.commit()
+        print(f"💾 Base de données mise à jour : {ajouts} nouveaux articles ajoutés.")
+        
+    except mysql.connector.Error as err:
+        print(f"❌ Erreur MySQL : {err}")
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
 
 def main():
-    print(f"🤖 Lancement du Scraper sur : {URL_CIBLE}")
-    print("-" * 40)
+    print(f"🤖 Récupération du flux RSS...")
+    xml = recuperer_html(URL_CIBLE)
     
-    # 1. Téléchargement
-    contenu_xml = recuperer_html(URL_CIBLE)
-    
-    if contenu_xml:
-        # 2. Analyse
-        articles = parser_articles(contenu_xml)
+    if xml:
+        tous_les_articles = parser_articles(xml)
         
-        print(f"\n✅ {len(articles)} articles trouvés.\n")
+        # 1. AFFICHAGE ET FILTRAGE
+        print("\n--- 📰 ARTICLES DU FLUX ---")
+        for i, art in enumerate(tous_les_articles):
+            print(f"[{i+1}] {art['titre']}")
         
-        # 3. Sauvegarde dans le fichier
-        sauvegarder_csv(articles)
+        print("\n" + "-"*30)
+        choix = input("❌ Numéros à IGNORER (ex: 1, 3) : ")
         
-        print("-" * 40)
-        print("Terminé. Vous pouvez ouvrir 'veille_cybersecurite.csv' !")
-        
+        indices_a_ignorer = []
+        if choix.strip():
+            try:
+                indices_a_ignorer = [int(x.strip()) for x in choix.split(',')]
+            except ValueError: pass
+
+        articles_a_sauvegarder = []
+        for i, art in enumerate(tous_les_articles):
+            if (i + 1) not in indices_a_ignorer:
+                articles_a_sauvegarder.append(art)
+
+        # 2. SAUVEGARDE MYSQL
+        if articles_a_sauvegarder:
+            sauvegarder_mysql(articles_a_sauvegarder)
+        else:
+            print("Aucun article retenu.")
+            
     else:
-        print("❌ Échec de la récupération.")
+        print("❌ Problème de flux.")
 
 if __name__ == "__main__":
     main()
