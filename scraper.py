@@ -4,6 +4,7 @@ from bs4 import BeautifulSoup
 import datetime
 import mysql.connector
 import sys
+import logging
 from dotenv import load_dotenv
 
 # --- IMPORTS RICH ---
@@ -20,7 +21,16 @@ console = Console(theme=custom_theme)
 # Charger les variables
 load_dotenv()
 
-# --- CONFIGURATION ---
+# --- CONFIGURATION LOGGING (NOUVEAU) ---
+# Cela va créer/ajouter dans 'journal.log' à côté du script
+logging.basicConfig(
+    filename='journal.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+
+# --- CONFIGURATION SOURCES ---
 SOURCES = {
     # --- CYBERSÉCURITÉ ---
     "[CYBER] ANSSI (CERT-FR)": "https://www.cert.ssi.gouv.fr/feed/",
@@ -57,6 +67,7 @@ def recuperer_xml(url):
         response.raise_for_status()
         return response.text
     except Exception as e:
+        logging.error(f"Erreur connexion {url} : {e}") # LOG ERREUR
         return None
 
 def parser_articles(xml, nom_source):
@@ -93,9 +104,11 @@ def sauvegarder_mysql(articles):
                 ajouts += 1
                 
         conn.commit()
+        logging.info(f"Succès SQL : {ajouts} articles ajoutés.") # LOG SUCCÈS
         return ajouts
     except mysql.connector.Error as err:
         console.print(f"[error]❌ Erreur MySQL : {err}[/error]")
+        logging.error(f"Erreur MySQL : {err}") # LOG CRITIQUE
         return 0
     finally:
         if conn and conn.is_connected():
@@ -103,11 +116,12 @@ def sauvegarder_mysql(articles):
             conn.close()
 
 def main():
+    logging.info("--- DÉMARRAGE DU SCRAPER ---") # LOG DÉBUT
     console.print(Panel.fit("🤖 [bold cyan]Scraper de Veille Technologique[/bold cyan]", border_style="blue"))
     
     tous_les_articles = []
 
-    # --- ÉTAPE 1 : RÉCUPÉRATION AVEC PROGRESS BAR ---
+    # --- ÉTAPE 1 : RÉCUPÉRATION ---
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
@@ -125,6 +139,7 @@ def main():
                 tous_les_articles.extend(articles_site)
             else:
                 console.print(f"[warning]⚠️ Échec sur {nom_site}[/warning]")
+                logging.warning(f"Échec flux : {nom_site}") # LOG WARNING
             
             progress.advance(task)
 
@@ -134,9 +149,9 @@ def main():
     articles_a_sauvegarder = []
 
     if sys.stdin.isatty():
+        logging.info("Mode : Manuel (Interactif)")
         console.print("\n[bold yellow]👀 MODE INTERACTIF - TRI MANUEL[/bold yellow]")
         
-        # Création du tableau pour le tri
         table = Table(show_header=True, header_style="bold magenta")
         table.add_column("#", style="dim", width=4)
         table.add_column("Source", style="cyan", width=25)
@@ -160,6 +175,7 @@ def main():
             if (i + 1) not in indices_a_ignorer:
                 articles_a_sauvegarder.append(art)
     else:
+        logging.info("Mode : Automatique (Cron/Arrière-plan)")
         console.print("[dim]🤖 Mode automatique : Sauvegarde complète.[/dim]")
         articles_a_sauvegarder = tous_les_articles
 
@@ -171,6 +187,9 @@ def main():
         console.print(Panel(f"✅ TERMINÉ\n[bold green]{nb_ajouts} nouveaux articles ajoutés[/bold green]", border_style="green"))
     else:
         console.print("[warning]Aucun article à sauvegarder.[/warning]")
+        logging.info("Aucun article sauvegardé.")
+
+    logging.info("--- FIN DU SCRAPER ---\n") # LOG FIN
 
 if __name__ == "__main__":
     main()
