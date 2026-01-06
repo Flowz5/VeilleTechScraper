@@ -86,8 +86,8 @@ def parser_articles(xml, nom_source):
     """
     soup = BeautifulSoup(xml, 'xml') 
 
-    # On utilise le slicing Python [:20] pour limiter la liste
-    items = soup.find_all('item')[:20]
+    # On utilise le slicing Python [:50] pour limiter la liste
+    items = soup.find_all('item')[:50]
     
     resultats = []
     
