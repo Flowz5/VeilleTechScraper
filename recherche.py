@@ -1,9 +1,17 @@
 import os
 import mysql.connector
 from dotenv import load_dotenv
+import webbrowser
 
-# Charger les variables d'environnement
+# --- IMPORTS RICH ---
+from rich.console import Console
+from rich.table import Table
+from rich import box
+from rich.panel import Panel
+from rich.prompt import Prompt
+
 load_dotenv()
+console = Console()
 
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
@@ -16,7 +24,7 @@ def connecter_bdd():
     try:
         return mysql.connector.connect(**DB_CONFIG)
     except mysql.connector.Error as err:
-        print(f"❌ Erreur de connexion : {err}")
+        console.print(f"[bold red]❌ Erreur de connexion : {err}[/bold red]")
         return None
 
 def recherche_globale(mot_cle):
@@ -24,9 +32,6 @@ def recherche_globale(mot_cle):
     if not conn: return
     
     cursor = conn.cursor()
-    
-    # La magie est ici : on cherche dans la source OU dans le titre
-    # %mot% permet de trouver le mot n'importe où dans la phrase
     query = """
         SELECT date, source, titre, lien 
         FROM articles 
@@ -36,40 +41,59 @@ def recherche_globale(mot_cle):
     """
     search_term = f"%{mot_cle}%"
     cursor.execute(query, (search_term, search_term))
-    
     resultats = cursor.fetchall()
     conn.close()
     
     if not resultats:
-        print(f"\n⚠️ Aucun article ne contient le mot : '{mot_cle}'")
-    else:
-        print(f"\n🔍 {len(resultats)} RÉSULTATS POUR : '{mot_cle}'")
-        print("=" * 80)
-        for date, source, titre, lien in resultats:
-            # On met en couleur (optionnel) le thème pour la lisibilité
-            print(f"📅 {date} | {source}")
-            print(f"📌 {titre}")
-            print(f"🔗 {lien}")
-            print("-" * 80)
+        console.print(f"[yellow]⚠️ Aucun résultat pour : '{mot_cle}'[/yellow]")
+        return
+
+    # --- AFFICHAGE TABLEAU RICH ---
+    table = Table(title=f"🔎 Résultats pour : {mot_cle}", box=box.ROUNDED, border_style="blue")
+
+    table.add_column("#", style="dim", justify="right")
+    table.add_column("Date", style="cyan", no_wrap=True)
+    table.add_column("Source", style="magenta")
+    table.add_column("Titre", style="bold white")
+
+    # On remplit le tableau
+    for i, (date, source, titre, lien) in enumerate(resultats):
+        table.add_row(str(i+1), str(date), source, titre)
+
+    console.print(table)
+    
+    # --- OUVERTURE NAVIGATEUR ---
+    ouvrir_lien(resultats)
+
+def ouvrir_lien(resultats):
+    """Propose d'ouvrir un article dans le navigateur"""
+    print()
+    choix = Prompt.ask("[bold green]🚀 Ouvrir un article ?[/bold green] (Numéro ou Entrée pour passer)")
+    
+    if choix.isdigit():
+        index = int(choix) - 1
+        if 0 <= index < len(resultats):
+            lien = resultats[index][3]
+            console.print(f"🌍 Ouverture de : [underline blue]{lien}[/underline blue]...")
+            webbrowser.open(lien)
+        else:
+            console.print("[red]Numéro invalide.[/red]")
 
 def main():
-    print("      ========================================")
-    print("      🔍 MOTEUR DE RECHERCHE DE VEILLE SIO")
-    print("      ========================================")
+    console.print(Panel.fit("[bold white]🔍 MOTEUR DE RECHERCHE DE VEILLE[/bold white]", style="on blue"))
     
     while True:
-        print("\nEntrez un thème (DEV, CYBER...) ou un mot-clé (Windows, Python, Script...)")
-        choix = input("👉 Recherche (ou 'Q' pour quitter) : ").strip()
-
-        if choix.upper() == 'Q':
-            print("👋 Fermeture du moteur de recherche.")
-            break
+        mot = Prompt.ask("\n[bold cyan]👉 Recherche[/bold cyan] (ou 'q' pour quitter)")
         
-        if len(choix) < 2:
-            print("⚠️ Veuillez entrer au moins 2 caractères.")
+        if mot.lower() == 'q':
+            console.print("[dim]👋 À bientôt ![/dim]")
+            break
+            
+        if len(mot) < 2:
+            console.print("[red]⚠️ Mot-clé trop court ![/red]")
             continue
             
-        recherche_globale(choix)
+        recherche_globale(mot)
 
 if __name__ == "__main__":
     main()
