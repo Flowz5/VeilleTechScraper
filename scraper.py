@@ -23,11 +23,29 @@ load_dotenv()
 # --- 2. CONFIGURATION DES SOURCES ---
 # J'ai choisi des sources mixtes pour couvrir les deux options du BTS (SLAM et SISR)
 SOURCES = {
+    # --- CYBERSÉCURITÉ ---
     "[CYBER] ANSSI (CERT-FR)": "https://www.cert.ssi.gouv.fr/feed/",
     "[CYBER] Le Monde Informatique": "https://www.lemondeinformatique.fr/flux-rss/rubrique/cybersecurite/rss.xml",
     "[CYBER] Zataz": "https://www.zataz.com/feed/",
+    "[CYBER] ZDNet Sécu": "https://www.zdnet.fr/feeds/rss/actualites/security/",
+
+    # --- DÉVELOPPEMENT (SLAM) ---
     "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
-    "[DEV] Human Coders": "https://news.humancoders.com/items/feed"
+    "[DEV] Human Coders": "https://news.humancoders.com/items/feed",
+    "[DEV] Programmez!": "https://www.programmez.com/rss.xml",
+
+    # --- INTELLIGENCE ARTIFICIELLE ---
+    "[IA] Actu IA": "https://www.actuia.com/feed/",
+    "[IA] Journal du Net (IA)": "https://www.journaldunet.com/solutions/dsi/rss/",
+
+    # --- INFRASTRUCTURE & CLOUD ---
+    "[INFRA] IT Connect": "https://www.it-connect.fr/feed/",
+    "[INFRA] LMI (Cloud)": "https://www.lemondeinformatique.fr/flux-rss/rubrique/cloud-computing/rss.xml",
+    "[INFRA] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
+
+    # --- TECH GÉNÉRALE ---
+    "[TECH] Frandroid": "https://www.frandroid.com/feed",
+    "[TECH] Next": "https://next.ink/feed/"
 }
 
 # On définit un User-Agent pour simuler un navigateur et éviter d'être bloqué par les sites
@@ -64,9 +82,9 @@ def parser_articles(xml, nom_source):
     On limite à 10 articles par source pour ne pas surcharger la base de données.
     """
     soup = BeautifulSoup(xml, 'xml') 
-    
-    # On utilise le slicing Python [:10] pour limiter la liste
-    items = soup.find_all('item')[:10]
+
+    # On utilise le slicing Python [:20] pour limiter la liste
+    items = soup.find_all('item')[:20]
     
     resultats = []
     
