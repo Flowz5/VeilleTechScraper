@@ -28,11 +28,13 @@ SOURCES = {
     "[CYBER] Le Monde Informatique": "https://www.lemondeinformatique.fr/flux-rss/rubrique/cybersecurite/rss.xml",
     "[CYBER] Zataz": "https://www.zataz.com/feed/",
     "[CYBER] ZDNet Sécu": "https://www.zdnet.fr/feeds/rss/actualites/security/",
+    "[CYBER] Cyberguerre (Numerama)": "https://www.numerama.com/cyberguerre/feed/",
 
     # --- DÉVELOPPEMENT (SLAM) ---
     "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
     "[DEV] Human Coders": "https://news.humancoders.com/items/feed",
     "[DEV] Programmez!": "https://www.programmez.com/rss.xml",
+    "[DEV] GitHub Blog": "https://github.blog/feed/",
 
     # --- INTELLIGENCE ARTIFICIELLE ---
     "[IA] Actu IA": "https://www.actuia.com/feed/",
@@ -45,7 +47,8 @@ SOURCES = {
 
     # --- TECH GÉNÉRALE ---
     "[TECH] Frandroid": "https://www.frandroid.com/feed",
-    "[TECH] Next": "https://next.ink/feed/"
+    "[TECH] Next": "https://next.ink/feed/",
+    "[TECH] Clubic": "https://www.clubic.com/feed/news.rss"
 }
 
 # On définit un User-Agent pour simuler un navigateur et éviter d'être bloqué par les sites
