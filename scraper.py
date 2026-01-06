@@ -32,23 +32,36 @@ logging.basicConfig(
 
 # --- CONFIGURATION SOURCES ---
 SOURCES = {
-    # --- CYBERSÉCURITÉ ---
+    # --- CYBERSÉCURITÉ & JURIDIQUE (RGPD) ---
     "[CYBER] ANSSI (CERT-FR)": "https://www.cert.ssi.gouv.fr/feed/",
     "[CYBER] Le Monde Informatique": "https://www.lemondeinformatique.fr/flux-rss/rubrique/cybersecurite/rss.xml",
     "[CYBER] Zataz": "https://www.zataz.com/feed/",
     "[CYBER] ZDNet Sécu": "https://www.zdnet.fr/feeds/rss/actualites/security/",
-    "[CYBER] Cyberguerre (Numerama)": "https://www.numerama.com/cyberguerre/feed/",
-    
-    # --- DÉVELOPPEMENT ---
+    "[CYBER] WeLiveSecurity (ESET)": "https://www.welivesecurity.com/fr/feed/",  # Analyse de malwares
+    "[LEGAL] CNIL (Actualités)": "https://www.cnil.fr/flux-rss/actualite",       # Indispensable pour le BTS (E5/E6)
+
+    # --- DÉVELOPPEMENT (SLAM) ---
     "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
-    "[DEV] Human Coders": "https://news.humancoders.com/items/feed",
-    "[DEV] Programmez!": "https://www.programmez.com/rss.xml",
+    "[DEV] Journal du Hacker": "https://www.journalduhacker.net/rss",            # L'agrégateur n°1 des devs FR
+    "[DEV] Grafikart": "https://grafikart.fr/feed.rss",                          # Tutos Web modernes
     "[DEV] GitHub Blog": "https://github.blog/feed/",
-    
-    # --- AUTRES (IA, INFRA, TECH) ---
-    "[IA] Actu IA": "https://www.actuia.com/feed/",
+    "[DEV] Les Joies du Code": "https://lesjoiesducode.fr/feed",                 # Culture Dev & Humour
+
+    # --- INFRASTRUCTURE, LINUX & CLOUD (SISR) ---
     "[INFRA] IT Connect": "https://www.it-connect.fr/feed/",
-    "[TECH] Next": "https://next.ink/feed/"
+    "[INFRA] LinuxFR.org": "https://linuxfr.org/news.atom",                      # La référence du Libre en France
+    "[INFRA] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
+    "[INFRA] Framboise 314": "https://www.framboise314.fr/feed/",                # IoT / Raspberry Pi
+
+    # --- INTELLIGENCE ARTIFICIELLE & DATA ---
+    "[IA] Actu IA": "https://www.actuia.com/feed/",
+    "[IA] LeBigData": "https://www.lebigdata.fr/feed",                           # Big Data & IA
+    
+    # --- TECH GÉNÉRALE & TIPS ---
+    "[TECH] Korben": "https://korben.info/feed",                                 # Incontournable pour la veille "astuces"
+    "[TECH] Next INpact": "https://www.nextinpact.com/rss/news.xml",             # Très pointu sur le numérique
+    "[TECH] Frandroid": "https://www.frandroid.com/feed",
+    "[TECH] Clubic": "https://www.clubic.com/feed/news.rss"
 }
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
