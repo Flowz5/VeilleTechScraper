@@ -38,7 +38,6 @@ SOURCES = {
     "[CYBER] Zataz": "https://www.zataz.com/feed/",
     "[CYBER] ZDNet Sécu": "https://www.zdnet.fr/feeds/rss/actualites/security/",
     "[CYBER] WeLiveSecurity (ESET)": "https://www.welivesecurity.com/fr/feed/",  # Analyse de malwares
-    "[LEGAL] CNIL (Actualités)": "https://www.cnil.fr/flux-rss/actualite",       # Indispensable pour le BTS (E5/E6)
 
     # --- DÉVELOPPEMENT (SLAM) ---
     "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
@@ -53,13 +52,15 @@ SOURCES = {
     "[INFRA] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
     "[INFRA] Framboise 314": "https://www.framboise314.fr/feed/",                # IoT / Raspberry Pi
 
+    # ... autres catégories ...
+
     # --- INTELLIGENCE ARTIFICIELLE & DATA ---
     "[IA] Actu IA": "https://www.actuia.com/feed/",
-    "[IA] LeBigData": "https://www.lebigdata.fr/feed",                           # Big Data & IA
+    "[IA] LeBigData": "https://www.lebigdata.fr/feed",
     
     # --- TECH GÉNÉRALE & TIPS ---
-    "[TECH] Korben": "https://korben.info/feed",                                 # Incontournable pour la veille "astuces"
-    "[TECH] Next INpact": "https://www.nextinpact.com/rss/news.xml",             # Très pointu sur le numérique
+    "[TECH] Korben": "https://korben.info/feed",
+    "[TECH] Next": "https://next.ink/feed/", 
     "[TECH] Frandroid": "https://www.frandroid.com/feed",
     "[TECH] Clubic": "https://www.clubic.com/feed/news.rss"
 }
