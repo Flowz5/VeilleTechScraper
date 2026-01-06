@@ -68,7 +68,7 @@ def recherche_pertinence(mot_cle):
         return
 
     # Affichage
-    table = Table(title=f"🔎 Résultats pour : '{mot_cle}' (Tri par pertinence)", box=box.ROUNDED, border_style="blue")
+    table = Table(title=f"🔎 Résultats pour : '{mot_cle}' (Tri par pertinence)", box=box.ROUNDED, border_style="blue", show_lines=True, padding=(0, 1))
     table.add_column("#", style="dim", justify="right")
     table.add_column("Score", style="yellow", justify="center") # On affiche le score !
     table.add_column("Date", style="cyan")
