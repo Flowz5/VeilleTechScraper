@@ -1,8 +1,3 @@
-Voici une version **complète et modernisée** de ton README. J'ai intégré les dernières nouveautés que nous avons développées ensemble (l'interface graphique avec `Rich`, le script de recherche `search.py`, et l'organisation par catégories).
-
-C'est une version "prête à l'emploi" pour ton GitHub.
-
----
 
 # 🛡️ Cyber-Watch : Veille Technologique Automatisée
 
