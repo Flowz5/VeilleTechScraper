@@ -1,5 +1,5 @@
 [server]
-headless = true         # Désactive les popups de démarrage
+headless = false         # Désactive les popups de démarrage
 address = "0.0.0.0"     # Permet d'y accéder depuis ton téléphone (si connecté au même Wifi) !
 
 [theme]
