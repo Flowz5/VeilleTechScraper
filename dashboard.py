@@ -28,7 +28,7 @@ def load_data():
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
         # On récupère les 500 derniers articles pour l'analyse
-        query = "SELECT date, source, titre, lien FROM articles ORDER BY date DESC LIMIT 500"
+        query = "SELECT date, source, titre, lien FROM articles ORDER BY date DESC LIMIT 5000"
         df = pd.read_sql(query, conn)
         conn.close()
         return df
