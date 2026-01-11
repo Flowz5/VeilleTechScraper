@@ -1,5 +1,6 @@
 run_search.sh 
 run_scraper.sh
+run_dashboard.sh
 .env
 journal.log
 venv/
