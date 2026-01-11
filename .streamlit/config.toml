@@ -1,0 +1,13 @@
+[server]
+headless = true         # Désactive les popups de démarrage
+address = "0.0.0.0"     # Permet d'y accéder depuis ton téléphone (si connecté au même Wifi) !
+
+[theme]
+base = "dark"           # Force le mode sombre
+primaryColor = "#00aa00" # Force la couleur verte (Matrix)
+backgroundColor = "#0e1117"
+secondaryBackgroundColor = "#262730"
+
+[client]
+toolbarMode = "minimal" # Cache les options de développeur (Deploy, etc.)
+showSidebarNavigation = false
