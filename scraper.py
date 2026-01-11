@@ -21,8 +21,7 @@ console = Console(theme=custom_theme)
 # Charger les variables
 load_dotenv()
 
-# --- CONFIGURATION LOGGING (NOUVEAU) ---
-# Cela va créer/ajouter dans 'journal.log' à côté du script
+# --- CONFIGURATION LOGGING ---
 logging.basicConfig(
     filename='journal.log',
     level=logging.INFO,
@@ -32,37 +31,27 @@ logging.basicConfig(
 
 # --- CONFIGURATION SOURCES ---
 SOURCES = {
-    # --- CYBERSÉCURITÉ & JURIDIQUE (RGPD) ---
+    # --- CYBERSÉCURITÉ ---
     "[CYBER] ANSSI (CERT-FR)": "https://www.cert.ssi.gouv.fr/feed/",
     "[CYBER] Le Monde Informatique": "https://www.lemondeinformatique.fr/flux-rss/rubrique/cybersecurite/rss.xml",
     "[CYBER] Zataz": "https://www.zataz.com/feed/",
     "[CYBER] ZDNet Sécu": "https://www.zdnet.fr/feeds/rss/actualites/security/",
-    "[CYBER] WeLiveSecurity (ESET)": "https://www.welivesecurity.com/fr/feed/",  # Analyse de malwares
-
-    # --- DÉVELOPPEMENT (SLAM) ---
-    "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
-    "[DEV] Journal du Hacker": "https://www.journalduhacker.net/rss",            # L'agrégateur n°1 des devs FR
-    "[DEV] Grafikart": "https://grafikart.fr/feed.rss",                          # Tutos Web modernes
-    "[DEV] GitHub Blog": "https://github.blog/feed/",
-    "[DEV] Les Joies du Code": "https://lesjoiesducode.fr/feed",                 # Culture Dev & Humour
-
-    # --- INFRASTRUCTURE, LINUX & CLOUD (SISR) ---
-    "[INFRA] IT Connect": "https://www.it-connect.fr/feed/",
-    "[INFRA] LinuxFR.org": "https://linuxfr.org/news.atom",                      # La référence du Libre en France
-    "[INFRA] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
-    "[INFRA] Framboise 314": "https://www.framboise314.fr/feed/",                # IoT / Raspberry Pi
-
-    # ... autres catégories ...
-
-    # --- INTELLIGENCE ARTIFICIELLE & DATA ---
-    "[IA] Actu IA": "https://www.actuia.com/feed/",
-    "[IA] LeBigData": "https://www.lebigdata.fr/feed",
+    "[CYBER] WeLiveSecurity (ESET)": "https://www.welivesecurity.com/fr/feed/",
     
-    # --- TECH GÉNÉRALE & TIPS ---
-    "[TECH] Korben": "https://korben.info/feed",
+    # --- DÉVELOPPEMENT ---
+    "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
+    "[DEV] Journal du Hacker": "https://www.journalduhacker.net/rss",
+    "[DEV] GitHub Blog": "https://github.blog/feed/",
+    
+    # --- INFRA & LINUX ---
+    "[INFRA] IT Connect": "https://www.it-connect.fr/feed/",
+    "[INFRA] LinuxFR.org": "https://linuxfr.org/news.atom",
+    "[INFRA] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
+    
+    # --- TECH & IA ---
+    "[IA] Actu IA": "https://www.actuia.com/feed/",
     "[TECH] Next": "https://next.ink/feed/", 
-    "[TECH] Frandroid": "https://www.frandroid.com/feed",
-    "[TECH] Clubic": "https://www.clubic.com/feed/news.rss"
+    "[TECH] Korben": "https://korben.info/feed"
 }
 
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
@@ -81,7 +70,7 @@ def recuperer_xml(url):
         response.raise_for_status()
         return response.text
     except Exception as e:
-        logging.error(f"Erreur connexion {url} : {e}") # LOG ERREUR
+        logging.error(f"Erreur connexion {url} : {e}")
         return None
 
 def parser_articles(xml, nom_source):
@@ -118,11 +107,11 @@ def sauvegarder_mysql(articles):
                 ajouts += 1
                 
         conn.commit()
-        logging.info(f"Succès SQL : {ajouts} articles ajoutés.") # LOG SUCCÈS
+        logging.info(f"Succès SQL : {ajouts} articles ajoutés.")
         return ajouts
     except mysql.connector.Error as err:
         console.print(f"[error]❌ Erreur MySQL : {err}[/error]")
-        logging.error(f"Erreur MySQL : {err}") # LOG CRITIQUE
+        logging.error(f"Erreur MySQL : {err}")
         return 0
     finally:
         if conn and conn.is_connected():
@@ -130,7 +119,7 @@ def sauvegarder_mysql(articles):
             conn.close()
 
 def main():
-    logging.info("--- DÉMARRAGE DU SCRAPER ---") # LOG DÉBUT
+    logging.info("--- DÉMARRAGE DU SCRAPER ---")
     console.print(Panel.fit("🤖 [bold cyan]Scraper de Veille Technologique[/bold cyan]", border_style="blue"))
     
     tous_les_articles = []
@@ -153,7 +142,7 @@ def main():
                 tous_les_articles.extend(articles_site)
             else:
                 console.print(f"[warning]⚠️ Échec sur {nom_site}[/warning]")
-                logging.warning(f"Échec flux : {nom_site}") # LOG WARNING
+                logging.warning(f"Échec flux : {nom_site}")
             
             progress.advance(task)
 
@@ -163,6 +152,7 @@ def main():
     articles_a_sauvegarder = []
 
     if sys.stdin.isatty():
+        # Mode Interactif
         logging.info("Mode : Manuel (Interactif)")
         console.print("\n[bold yellow]👀 MODE INTERACTIF - TRI MANUEL[/bold yellow]")
         
@@ -189,6 +179,7 @@ def main():
             if (i + 1) not in indices_a_ignorer:
                 articles_a_sauvegarder.append(art)
     else:
+        # Mode Automatique
         logging.info("Mode : Automatique (Cron/Arrière-plan)")
         console.print("[dim]🤖 Mode automatique : Sauvegarde complète.[/dim]")
         articles_a_sauvegarder = tous_les_articles
@@ -203,7 +194,7 @@ def main():
         console.print("[warning]Aucun article à sauvegarder.[/warning]")
         logging.info("Aucun article sauvegardé.")
 
-    logging.info("--- FIN DU SCRAPER ---\n") # LOG FIN
+    logging.info("--- FIN DU SCRAPER ---\n")
 
 if __name__ == "__main__":
     main()

@@ -1,6 +1,7 @@
+rich
 requests
 beautifulsoup4
-lxml
 mysql-connector-python
 python-dotenv
-rich
+streamlit
+pandas

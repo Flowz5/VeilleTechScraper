@@ -1,61 +1,50 @@
 
 # 🛡️ Cyber-Watch : Veille Technologique Automatisée
 
-**Cyber-Watch** est un outil complet de veille technologique développé en Python. Il permet d'automatiser la collecte d'articles depuis de multiples sources (Cyber, Dev, IA, Infra), de les archiver dans une base de données MySQL, et de les consulter via une interface terminal moderne et interactive.
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+
+**Cyber-Watch** est une solution complète de veille technologique. Elle automatise la collecte d'articles (Cyber, Dev, Infra), les stocke, et offre deux interfaces de consultation : un terminal interactif pour les experts et un **Dashboard Web** pour l'analyse visuelle.
 
 ## 📁 Structure du Projet
 
 L'architecture respecte les standards de développement professionnel :
 
-* `scraper.py` : **Collecteur**. Récupère les flux RSS, gère le tri (manuel/auto) et l'insertion en BDD.
-* `search.py` : **Moteur de recherche**. Interface CLI pour requêter la base de données et ouvrir les articles dans le navigateur.
-* `database.sql` : Script d'initialisation de la structure MySQL.
-* `requirements.txt` : Liste des dépendances (incluant `rich`, `requests`, `mysql-connector`).
+* `scraper.py` : **Collecteur (Backend)**. Récupère les flux RSS, gère le tri (manuel/auto) et l'insertion en BDD avec logs.
+* `dashboard.py` : **Interface Web (Frontend)**. Tableau de bord Business Intelligence (BI) développé avec **Streamlit** pour visualiser les données.
+* `recherche.py` : **Interface CLI**. Moteur de recherche rapide dans le terminal avec affichage enrichi (`Rich`).
+* `requirements.txt` : Liste des dépendances (`streamlit`, `rich`, `mysql-connector`, `pandas`).
 * `.env` : Configuration sécurisée des identifiants (non versionné).
-* `venv/` : Environnement virtuel isolé.
 
 ## 🚀 Fonctionnalités Clés
 
 ### 1. Collecte Intelligente (`scraper.py`)
+* **Multi-Sources** : Agrégation centralisée (ANSSI, Zataz, Developpez, GitHub Blog, IT Connect...).
+* **Robustesse** : Gestion des erreurs réseaux, logs détaillés (`journal.log`), et anti-doublons SQL.
+* **Mode Hybride** : Interactif (choix manuel) ou Automatique (Cron).
 
-* **Multi-catégories** : Agrégation de sources variées :
-* 🔐 **Cyber** : ANSSI, Zataz, Le Monde Informatique...
-* 💻 **Dev** : Developpez.com, GitHub Blog...
-* 🤖 **IA & Infra** : Actu IA, IT Connect...
+### 2. Business Intelligence & Data Viz (`dashboard.py`)
+* **Visualisation** : Graphiques dynamiques des volumes par source.
+* **KPIs** : Indicateurs clés (Nombre d'articles, Source la plus active, Pertinence).
+* **Filtres Temps Réel** : Tri par source, recherche textuelle instantanée.
+* **Interface Web** : Accessible via navigateur, responsive et moderne (Mode sombre supporté).
 
-
-* **Mode Hybride** :
-* **Interactif** : Interface visuelle pour sélectionner manuellement les articles pertinents.
-* **Automatique (Cron)** : Mode silencieux pour l'archivage planifié sur serveur.
-
-
-* **Feedback Visuel** : Barres de progression et tableaux formatés grâce à la librairie **Rich**.
-
-### 2. Consultation & Recherche (`search.py`)
-
-* **Moteur SQL** : Recherche rapide par mots-clés dans les titres et les sources.
-* **Navigation Fluide** : Ouverture directe des articles dans le navigateur web par simple sélection numérique.
-* **Historique** : Accès à l'intégralité des articles archivés.
-
-### 3. Sécurité & Robustesse
-
-* **Gestion des doublons** : Utilisation de `INSERT IGNORE` pour garantir l'unicité des liens.
-* **Environnement** : Séparation stricte du code et des secrets via `.env`.
+### 3. Consultation Rapide (`recherche.py`)
+* **Moteur SQL** : Recherche par pertinence (Algorithme de scoring simple).
+* **CLI Moderne** : Tableaux formatés et ouverture des liens au clavier.
 
 ## 🛠️ Installation
 
 ### 1. Préparation
-
-Cloner le dépôt et configurer l'environnement virtuel :
-
 ```bash
-git clone https://github.com/Flowz5/VeilleTechScraper.git
+git clone [https://github.com/Flowz5/VeilleTechScraper.git](https://github.com/Flowz5/VeilleTechScraper.git)
 cd VeilleTechScraper
 
 # Création et activation de l'environnement virtuel
 python -m venv venv
-source venv/bin/activate  # Sur Linux/Mac
-# .\venv\Scripts\activate # Sur Windows
+source venv/bin/activate  # Linux/Mac
+# .\venv\Scripts\activate # Windows
 
 # Installation des dépendances
 pip install -r requirements.txt
@@ -64,54 +53,51 @@ pip install -r requirements.txt
 
 ### 2. Base de données
 
-Importez le fichier `database.sql` dans votre serveur MySQL/MariaDB.
+Assurez-vous d'avoir un serveur MySQL local. Créez la base et importez la structure (table `articles`).
 
 ### 3. Configuration
 
-Dupliquez le fichier d'exemple et renseignez vos accès :
+Créez un fichier `.env` à la racine :
 
-```bash
-cp .env.exemple .env
+```ini
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=votre_mot_de_passe
+DB_NAME=veille_tech
 
 ```
 
-*Modifiez ensuite `.env` avec vos identifiants BDD.*
-
 ## 🖥️ Utilisation
 
-### Lancer une veille (Collecte)
-
-Pour récupérer les derniers articles :
+### 📥 Lancer une collecte
 
 ```bash
 python scraper.py
 
 ```
 
-### Rechercher un article
-
-Pour interroger votre base de connaissances :
+### 📊 Ouvrir le Dashboard Web
 
 ```bash
-python search.py
+streamlit run dashboard.py
 
 ```
 
-## 🐧 Intégration Linux (Bonus)
+*Le tableau de bord s'ouvrira automatiquement dans votre navigateur (http://localhost:8501).*
 
-Le projet est conçu pour s'intégrer parfaitement dans un workflow Linux (ex: **Hyprland**).
-Exemple de *bindings* pour lancer la veille ou la recherche sans quitter le clavier :
+### 🔍 Recherche Rapide (Terminal)
 
-```ini
-# Hyprland Config
-bind = SUPER, S, exec, kitty --hold bash -c "cd ~/Chemin/Projet && source venv/bin/activate && python scraper.py"
-bind = SUPER SHIFT, S, exec, kitty --hold bash -c "cd ~/Chemin/Projet && source venv/bin/activate && python search.py"
+```bash
+python recherche.py
 
 ```
 
-## 📊 Valorisation BTS SIO
+## 🐧 Intégration Linux (Hyprland / Bash)
 
-Ce projet couvre des compétences clés du diplôme :
+Ajoutez ces alias dans votre `.bashrc` pour un accès ultra-rapide :
 
-* **Option SLAM** : Développement applicatif, utilisation de librairies tierces (`BeautifulSoup`, `Rich`), requêtage SQL complexe, gestion d'interfaces CLI.
-* **Option SISR** : Automatisation de tâches (Scripting), gestion de flux de données, surveillance et centralisation de logs/informations (Veille).
+```bash
+alias veille="cd ~/Projets/VeilleTechScraper && source venv/bin/activate && python scraper.py"
+alias dash="cd ~/Projets/VeilleTechScraper && source venv/bin/activate && streamlit run dashboard.py"
+
+```
