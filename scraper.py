@@ -75,7 +75,7 @@ def recuperer_xml(url):
 
 def parser_articles(xml, nom_source):
     soup = BeautifulSoup(xml, 'xml') 
-    items = soup.find_all('item')[:50]
+    items = soup.find_all('item')[:100]
     resultats = []
     
     for item in items:
