@@ -37,7 +37,6 @@ SOURCES = {
     "[CYBER] Zataz": "https://www.zataz.com/feed/",
     "[CYBER] ZDNet Sécu": "https://www.zdnet.fr/feeds/rss/actualites/security/",
     "[CYBER] WeLiveSecurity (ESET)": "https://www.welivesecurity.com/fr/feed/",
-    "[CYBER] CyberMalveillance.gouv": "https://www.cybermalveillance.gouv.fr/flux-rss",
     
     # --- CYBERSÉCURITÉ (US - Indispensable pour la réactivité) ---
     "[CYBER 🇺🇸] The Hacker News": "https://feeds.feedburner.com/TheHackersNews",
@@ -48,29 +47,28 @@ SOURCES = {
     "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
     "[DEV] Journal du Hacker": "https://www.journalduhacker.net/rss",
     "[DEV] GitHub Blog": "https://github.blog/feed/",
-    "[DEV 🇺🇸] Real Python": "https://realpython.com/atom.xml",  # Top pour progresser en Python
-    "[DEV 🇺🇸] Dev.to": "https://dev.to/feed",  # Articles communautaires très variés
+    "[DEV 🇺🇸] Real Python": "https://realpython.com/atom.xml",
+    "[DEV 🇺🇸] Dev.to": "https://dev.to/feed",
     
     # --- INFRA, LINUX & CLOUD ---
     "[INFRA] IT Connect": "https://www.it-connect.fr/feed/",
     "[INFRA] LinuxFR.org": "https://linuxfr.org/news.atom",
     "[INFRA] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
-    "[INFRA] Toolinux": "https://www.toolinux.com/spip.php?page=backend",
-    "[INFRA 🇺🇸] AWS What's New": "https://aws.amazon.com/about-aws/whats-new/recent/feed/", # Veille Cloud AWS
+    # URL Corrigée (l'ancienne était instable)
+    "[INFRA] Toolinux": "http://feeds.feedburner.com/toolinux",
+    "[INFRA 🇺🇸] AWS What's New": "https://aws.amazon.com/about-aws/whats-new/recent/feed/",
     
     # --- TECH, IA & DATA ---
     "[IA] Actu IA": "https://www.actuia.com/feed/",
     "[TECH] Next": "https://next.ink/feed/", 
     "[TECH] Korben": "https://korben.info/feed",
+    # URL Corrigée (fichier XML direct)
     "[IA 🇺🇸] OpenAI Blog": "https://openai.com/blog/rss.xml",
-    "[DATA 🇺🇸] KDnuggets": "https://www.kdnuggets.com/feed", # La référence Data Science
-    
-    # --- CULTURE GEEK & SCIENCE ---
-    "[SCIENCE] Numerama": "https://www.numerama.com/feed/",
-    "[HARDWARE] Cowcotland": "https://www.cowcotland.com/rss"
+    "[DATA 🇺🇸] KDnuggets": "https://www.kdnuggets.com/feed",
+    "[SCIENCE] Numerama": "https://www.numerama.com/feed/"
 }
 
-USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
