@@ -1,61 +1,86 @@
 
-# 🛡️ Cyber-Watch : Veille Technologique Automatisée
+# 🛡️ Cyber-Watch : Veille Technologique & Cyber-Intelligence
 
-![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python&logoColor=white)
 ![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
+![Scraping](https://img.shields.io/badge/BeautifulSoup-Scraping-green?style=for-the-badge)
 
-**Cyber-Watch** est une solution complète de veille technologique. Elle automatise la collecte d'articles (Cyber, Dev, Infra), les stocke, et offre deux interfaces de consultation : un terminal interactif pour les experts et un **Dashboard Web** pour l'analyse visuelle.
+**Cyber-Watch** est une plateforme de veille technologique automatisée orientée Cybersécurité et DevOps. 
+Plus qu'un simple agrégateur RSS, elle intègre un **moteur d'analyse sémantique** capable de scorer les articles selon leur criticité (Ransomware, 0-Day, Failles) pour prioriser la lecture des experts.
+
+---
+
+## 🚀 Pourquoi ce projet ?
+
+Dans le flux continu d'informations technologiques, le défi n'est plus de trouver l'information, mais de **filtrer le bruit**. 
+Cyber-Watch répond à ce besoin via :
+1.  **Centralisation** : Sources Françaises (ANSSI, Zataz) et Internationales (The Hacker News, BleepingComputer).
+2.  **Qualification** : Algorithme de pondération par mots-clés.
+3.  **Visualisation** : Dashboard BI pour piloter la veille.
+
+---
+
+## ⚙️ Fonctionnalités Clés
+
+### 1. Collecte Intelligente (`scraper.py`)
+* **Multi-Sources & Hybride** : Scrape ~20 flux RSS majeurs (Cyber, Dev, Cloud).
+* **Contournement de Protections** : Gestion des *User-Agents* et certificats SSL pour les sites gouvernementaux/protégés.
+* **Nettoyage** : Déduplication automatique via SQL pour éviter les doublons.
+
+### 2. Moteur de Pertinence (Scoring)
+L'application analyse chaque titre d'article et attribue un score de **0 à 10** selon des poids définis :
+* 🔴 **Critique (+3 pts)** : *Ransomware, 0-day, Breach, CVE, Faille...*
+* 🟠 **Important (+2 pts)** : *ANSSI, GDPR, Python, Docker, Cyber...*
+* 🔵 **Contexte (+1 pt)** : *Windows, Update, Web, Tech...*
+
+### 3. Dashboard Business Intelligence (`dashboard.py`)
+* **Fil d'actualité Priorisé** : Les articles critiques remontent automatiquement en haut de liste avec une barre de progression visuelle.
+* **Analyse de Tendances** : Nuage de mots-clés (WordCloud) généré dynamiquement (Stopwords FR/EN filtrés).
+* **KPIs Temps Réel** : Volume d'articles, sources les plus actives, nombre d'alertes "Hot" 🔥.
+* **Filtres Avancés** : Recherche textuelle instantanée, filtrage par source et date.
+
+---
 
 ## 📁 Structure du Projet
 
-L'architecture respecte les standards de développement professionnel :
+```bash
+VeilleTechScraper/
+├── scraper.py       # Backend : Collecte, Parsing XML, Insertion BDD
+├── dashboard.py     # Frontend : Interface Streamlit, Algo de Scoring, Dataviz
+├── recherche.py     # CLI : Interface terminal rapide (Rich)
+├── requirements.txt # Dépendances
+├── .env             # Variables d'environnement (Non versionné)
+└── README.md        # Documentation
 
-* `scraper.py` : **Collecteur (Backend)**. Récupère les flux RSS, gère le tri (manuel/auto) et l'insertion en BDD avec logs.
-* `dashboard.py` : **Interface Web (Frontend)**. Tableau de bord Business Intelligence (BI) développé avec **Streamlit** pour visualiser les données.
-* `recherche.py` : **Interface CLI**. Moteur de recherche rapide dans le terminal avec affichage enrichi (`Rich`).
-* `requirements.txt` : Liste des dépendances (`streamlit`, `rich`, `mysql-connector`, `pandas`).
-* `.env` : Configuration sécurisée des identifiants (non versionné).
+```
 
-## 🚀 Fonctionnalités Clés
+---
 
-### 1. Collecte Intelligente (`scraper.py`)
-* **Multi-Sources** : Agrégation centralisée (ANSSI, Zataz, Developpez, GitHub Blog, IT Connect...).
-* **Robustesse** : Gestion des erreurs réseaux, logs détaillés (`journal.log`), et anti-doublons SQL.
-* **Mode Hybride** : Interactif (choix manuel) ou Automatique (Cron).
+## 🛠️ Installation & Démarrage
 
-### 2. Business Intelligence & Data Viz (`dashboard.py`)
-* **Visualisation** : Graphiques dynamiques des volumes par source.
-* **KPIs** : Indicateurs clés (Nombre d'articles, Source la plus active, Pertinence).
-* **Filtres Temps Réel** : Tri par source, recherche textuelle instantanée.
-* **Interface Web** : Accessible via navigateur, responsive et moderne (Mode sombre supporté).
+### 1. Prérequis
 
-### 3. Consultation Rapide (`recherche.py`)
-* **Moteur SQL** : Recherche par pertinence (Algorithme de scoring simple).
-* **CLI Moderne** : Tableaux formatés et ouverture des liens au clavier.
+* Python 3.10+
+* Serveur MySQL (Local ou Distant)
 
-## 🛠️ Installation
+### 2. Installation
 
-### 1. Préparation
 ```bash
 git clone [https://github.com/Flowz5/VeilleTechScraper.git](https://github.com/Flowz5/VeilleTechScraper.git)
 cd VeilleTechScraper
 
-# Création et activation de l'environnement virtuel
+# Environnement virtuel
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
 # .\venv\Scripts\activate # Windows
 
-# Installation des dépendances
+# Dépendances
 pip install -r requirements.txt
 
 ```
 
-### 2. Base de données
-
-Assurez-vous d'avoir un serveur MySQL local. Créez la base et importez la structure (table `articles`).
-
-### 3. Configuration
+### 3. Configuration (.env)
 
 Créez un fichier `.env` à la racine :
 
@@ -67,37 +92,32 @@ DB_NAME=veille_tech
 
 ```
 
-## 🖥️ Utilisation
+### 4. Lancer l'application
 
-### 📥 Lancer une collecte
+**Étape 1 : Récupérer les articles**
 
 ```bash
 python scraper.py
 
 ```
 
-### 📊 Ouvrir le Dashboard Web
+**Étape 2 : Lancer le Dashboard**
 
 ```bash
 streamlit run dashboard.py
 
 ```
 
-*Le tableau de bord s'ouvrira automatiquement dans votre navigateur (http://localhost:8501).*
+*Le navigateur s'ouvrira automatiquement sur http://localhost:8501*
 
-### 🔍 Recherche Rapide (Terminal)
-
-```bash
-python recherche.py
-
-```
+---
 
 ## 🐧 Intégration Linux (Hyprland / Bash)
 
-Ajoutez ces alias dans votre `.bashrc` pour un accès ultra-rapide :
+Pour les utilisateurs avancés, ajoutez ces alias dans votre `.bashrc` ou `.zshrc` pour lancer votre veille en une commande :
 
 ```bash
-alias veille="cd ~/Projets/VeilleTechScraper && source venv/bin/activate && python scraper.py"
-alias dash="cd ~/Projets/VeilleTechScraper && source venv/bin/activate && streamlit run dashboard.py"
+alias cyberwatch="cd ~/Chemin/Vers/VeilleTechScraper && source venv/bin/activate && streamlit run dashboard.py"
+alias cyberscrape="cd ~/Chemin/Vers/VeilleTechScraper && source venv/bin/activate && python scraper.py"
 
 ```

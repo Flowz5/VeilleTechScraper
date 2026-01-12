@@ -7,6 +7,30 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 from datetime import datetime, timedelta
 
+# --- CONFIGURATION UTILISATEUR ---
+# Liste des mots qui t'intéressent. Plus un article en contient, plus il sera bien noté.
+# --- CONFIGURATION AVANCÉE (POIDS) ---
+# Format : "mot_clé": score (1=Normal, 2=Important, 3=Critique)
+MES_MOTS_CLES = {
+    # 🔴 CRITIQUE (Menaces & Urgences)
+    "ransomware": 3, "0-day": 3, "zero-day": 3, "faille": 3, "vulnerabilité": 3,
+    "cve": 3, "breach": 3, "fuite": 3, "piratage": 3, "hacked": 3, "exploit": 3,
+    "rce": 3, "critique": 3, "urgence": 3, "alert": 3,
+
+    # 🟠 IMPORTANT (Cyber & Outils majeurs)
+    "cyber": 2, "sécurité": 2, "security": 2, "anssi": 2, "malware": 2,
+    "phishing": 2, "ddos": 2, "rootkit": 2, "spyware": 2, "botnet": 2,
+    "gdpr": 2, "rgpd": 2, "cnil": 2, "cert": 2, "soc": 2, "siem": 2,
+    "docker": 2, "kubernetes": 2, "linux": 2, "python": 2, "ai": 2, "ia": 2,
+    "chatgpt": 2, "gpt": 2, "openai": 2,
+
+    # 🔵 NORMAL (Tech & Langages)
+    "windows": 1, "microsoft": 1, "apple": 1, "google": 1, "aws": 1, "azure": 1,
+    "cloud": 1, "server": 1, "data": 1, "javascript": 1, "react": 1, "node": 1,
+    "php": 1, "java": 1, "c#": 1, "c++": 1, "rust": 1, "go": 1, "sql": 1,
+    "api": 1, "rest": 1, "web": 1, "dev": 1, "code": 1, "github": 1, "gitlab": 1
+}
+
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(
     page_title="Cyber-Watch Dashboard",
@@ -38,6 +62,19 @@ def load_data():
         return df
     except Exception as e:
         return None
+
+def calculer_score(titre):
+    """Calcule le score en fonction des poids définis"""
+    if not isinstance(titre, str): return 0
+    score = 0
+    titre_min = titre.lower()
+    
+    # On parcourt notre dictionnaire (mot, poids)
+    for mot, poids in MES_MOTS_CLES.items():
+        if mot in titre_min:
+            score += poids
+            
+    return score
 
 # --- HEADER ---
 st.title("🛡️ Cyber-Watch : Tableau de Bord")
@@ -79,19 +116,26 @@ search_query = st.sidebar.text_input("Mots-clés (Titre)", placeholder="Ex: Rans
 all_sources = sorted(df['source'].unique())
 selected_sources = st.sidebar.multiselect("Sources", all_sources)
 
-# APPLICATION DES FILTRES
+# --- APPLICATION DES FILTRES ---
 filtered_df = df.copy()
 
-# Filtre Date
+# 1. Filtre Date
 filtered_df = filtered_df[filtered_df['date'] >= min_date]
 
-# Filtre Source
+# 2. Filtre Source
 if selected_sources:
     filtered_df = filtered_df[filtered_df['source'].isin(selected_sources)]
 
-# Filtre Texte
+# 3. Filtre Recherche Texte (Barre de recherche)
 if search_query:
     filtered_df = filtered_df[filtered_df['titre'].str.contains(search_query, case=False)]
+
+# --- CALCUL DE LA PERTINENCE (NOUVEAU) ---
+# On applique la notation sur chaque ligne
+filtered_df['score'] = filtered_df['titre'].apply(calculer_score)
+
+# On trie : Les meilleurs scores en haut, puis par date récente
+filtered_df = filtered_df.sort_values(by=['score', 'date'], ascending=[False, False])
 
 st.sidebar.markdown("---")
 
@@ -109,13 +153,15 @@ st.sidebar.download_button(
 #           FIN SIDEBAR
 # ==========================================
 
-
 # --- KPIs ---
+nb_articles_hot = len(filtered_df[filtered_df['score'] > 0]) # Nombre d'articles ayant au moins 1 mot-clé
+
 col1, col2, col3, col4 = st.columns(4)
 with col1: st.metric("Total Articles", len(filtered_df))
 with col2: st.metric("Source Top Activité", filtered_df['source'].mode()[0] if not filtered_df.empty else "N/A")
 with col3: st.metric("Dernière M.A.J", str(filtered_df['date'].max().date()) if not filtered_df.empty else "N/A")
-with col4: st.metric("Pertinence", f"{(len(filtered_df)/len(df)*100):.1f}%")
+# Ici, on affiche le nombre d'articles "Pertinents" (qui matchent tes mots-clés)
+with col4: st.metric("Articles Pertinents 🔥", f"{nb_articles_hot}") 
 
 st.markdown("---")
 
@@ -127,6 +173,7 @@ with col_cloud:
     if not filtered_df.empty:
         text = " ".join(title for title in filtered_df.titre)
         
+        # TA LISTE DE STOPWORDS (Je te laisse la tienne, elle était très bien)
         stopwords = {
             "le", "la", "les", "des", "du", "en", "un", "une", "pour", "sur", "avec", "par", 
             "dans", "et", "ou", "a", "est", "son", "sa", "ses", "qui", "que", "aux", "ne", 
@@ -139,7 +186,22 @@ with col_cloud:
             "dire", "dit", "voir", "pendant", "fois", "leurs", "quoi", "quel", "quelle",
             "comment", "pourquoi", "jamais", "toujours", "lors", "vers", "via", "ces", "cet",
             "ici", "là", "non", "oui", "alors", "ainsi", "telle", "tel", "tels", "telles",
-            "sont", "ont", "va", "van", "aux", "leurs", "leur", "mes", "tes", "ses", "nos", "vos"
+            "sont", "ont", "va", "van", "aux", "leurs", "leur", "mes", "tes", "ses", "nos", "vos",
+            "été", "étée", "étées", "ayant", "suis", "es", "sommes", "êtes", "font", "vont",
+            "the", "be", "to", "of", "and", "a", "in", "that", "have", "i", "it", "for", "not", 
+            "on", "with", "he", "as", "you", "do", "at", "this", "but", "his", "by", "from", 
+            "they", "we", "say", "her", "she", "or", "an", "will", "my", "one", "all", "would", 
+            "there", "their", "what", "so", "up", "out", "if", "about", "who", "get", "which", 
+            "go", "me", "when", "make", "can", "like", "time", "no", "just", "him", "know", 
+            "take", "people", "into", "year", "your", "good", "some", "could", "them", "see", 
+            "other", "than", "then", "now", "look", "only", "come", "its", "over", "think", 
+            "also", "back", "after", "use", "two", "how", "our", "work", "first", "well", 
+            "way", "even", "new", "want", "because", "any", "these", "give", "day", "most", 
+            "us", "is", "are", "was", "were", "has", "had", "been", "more", "very", "should",
+            "news", "today", "using", "used", "does", "read", "click", "here",
+            "http", "https", "www", "com", "fr", "org", "net", "html", "php", 
+            "cookies", "policy", "privacy", "rights", "reserved", "copyright", 
+            "loading", "content", "skip", "main", "menu"
         }
         
         wordcloud = WordCloud(
@@ -169,15 +231,24 @@ with col_chart:
 
 # --- TABLEAU ---
 st.subheader("📰 Fil d'Actualité")
+
+# On n'affiche pas la colonne "score" brute (c'est moche), on utilise ColumnConfig pour faire des étoiles
 st.dataframe(
     filtered_df,
     column_config={
         "lien": st.column_config.LinkColumn("Lien", display_text="Lire l'article"),
         "date": st.column_config.DateColumn("Date", format="DD/MM/YYYY"),
         "titre": "Titre de l'article",
-        "source": "Source"
+        "source": "Source",
+        "score": st.column_config.ProgressColumn(
+            "Intérêt",
+            help="Score calculé selon la criticité des mots-clés",
+            format="%d",
+            min_value=0,
+            max_value=10, # <-- Passe de 3 à 10 pour supporter les gros scores
+        ),
     },
     hide_index=True,
     use_container_width=True,
-    height=400
+    height=600 # Un peu plus grand pour bien voir
 )
