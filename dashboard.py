@@ -201,7 +201,7 @@ with col_cloud:
             "news", "today", "using", "used", "does", "read", "click", "here",
             "http", "https", "www", "com", "fr", "org", "net", "html", "php", 
             "cookies", "policy", "privacy", "rights", "reserved", "copyright", 
-            "loading", "content", "skip", "main", "menu"
+            "loading", "content", "skip", "main", "menu", "pas"
         }
         
         wordcloud = WordCloud(
