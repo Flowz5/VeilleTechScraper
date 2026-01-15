@@ -12,7 +12,7 @@ from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
 from rich.panel import Panel
-from rich.theme import Theme
+from rich.theme import Themew
 
 # Configuration du thème Rich
 custom_theme = Theme({"success": "green", "warning": "yellow", "error": "bold red", "info": "cyan"})
