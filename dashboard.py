@@ -54,7 +54,7 @@ DB_CONFIG = {
 def load_data():
     try:
         conn = mysql.connector.connect(**DB_CONFIG)
-        query = "SELECT date, source, titre, lien FROM articles ORDER BY date DESC LIMIT 2000"
+        query = "SELECT date, source, titre, lien FROM articles ORDER BY date DESC LIMIT 20000"
         df = pd.read_sql(query, conn)
         conn.close()
         # Conversion forcée en datetime pour les filtres
