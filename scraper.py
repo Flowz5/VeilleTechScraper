@@ -29,6 +29,25 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
+# --- [NOUVEAU] CONFIGURATION SCORING & N8N ---
+# URL de ton Webhook n8n (Production)
+# ⚠️ Remplace 'webhook-test' par 'webhook' quand tu actives le switch "Active" dans n8n
+N8N_WEBHOOK_URL = "http://localhost:5678/webhook/alert"
+
+# Poids des mots-clés pour le déclenchement d'alerte
+KEYWORDS_WEIGHTS = {
+    # 🔴 CRITIQUE (3 pts)
+    "ransomware": 3, "0-day": 3, "faille": 3, "critique": 3, "urgence": 3,
+    "cve": 3, "breach": 3, "piratage": 3, "hacked": 3, "exploit": 3, "rce": 3,
+    
+    # 🟠 IMPORTANT (2 pts)
+    "cyber": 2, "anssi": 2, "security": 2, "malware": 2, "rootkit": 2,
+    "phishing": 2, "ddos": 2, "alert": 2, "vulnerabilité": 2,
+    
+    # 🔵 CONTEXTE (1 pt)
+    "python": 1, "linux": 1, "docker": 1, "windows": 1, "google": 1
+}
+
 # --- CONFIGURATION SOURCES ---
 SOURCES = {
     # --- CYBERSÉCURITÉ (FR) ---
@@ -54,7 +73,6 @@ SOURCES = {
     "[INFRA] IT Connect": "https://www.it-connect.fr/feed/",
     "[INFRA] LinuxFR.org": "https://linuxfr.org/news.atom",
     "[INFRA] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
-    # URL Corrigée (l'ancienne était instable)
     "[INFRA] Toolinux": "http://feeds.feedburner.com/toolinux",
     "[INFRA 🇺🇸] AWS What's New": "https://aws.amazon.com/about-aws/whats-new/recent/feed/",
     
@@ -62,7 +80,6 @@ SOURCES = {
     "[IA] Actu IA": "https://www.actuia.com/feed/",
     "[TECH] Next": "https://next.ink/feed/", 
     "[TECH] Korben": "https://korben.info/feed",
-    # URL Corrigée (fichier XML direct)
     "[IA 🇺🇸] OpenAI Blog": "https://openai.com/blog/rss.xml",
     "[DATA 🇺🇸] KDnuggets": "https://www.kdnuggets.com/feed",
     "[SCIENCE] Numerama": "https://www.numerama.com/feed/"
@@ -76,6 +93,31 @@ DB_CONFIG = {
     'password': os.getenv('DB_PASSWORD'), 
     'database': os.getenv('DB_NAME')
 }
+
+# --- [NOUVEAU] FONCTIONS INTELLIGENTES ---
+def calculer_score(titre):
+    """Calcule la pertinence d'un article"""
+    score = 0
+    titre_min = titre.lower()
+    for mot, poids in KEYWORDS_WEIGHTS.items():
+        if mot in titre_min:
+            score += poids
+    return score
+
+def notifier_n8n(article, score):
+    """Envoie l'article à n8n pour alerte Discord"""
+    payload = {
+        "titre": article['titre'],
+        "source": article['source'],
+        "lien": article['lien'],
+        "score": score
+    }
+    try:
+        # Timeout court (2s) pour ne pas bloquer le scraper si n8n est éteint
+        requests.post(N8N_WEBHOOK_URL, json=payload, timeout=2)
+    except Exception as e:
+        # On log l'erreur discrètement sans faire planter le script
+        logging.warning(f"Impossible de joindre n8n : {e}")
 
 def recuperer_xml(url):
     headers = {'User-Agent': USER_AGENT}
@@ -112,16 +154,31 @@ def sauvegarder_mysql(articles):
         conn = mysql.connector.connect(**DB_CONFIG)
         cursor = conn.cursor()
         ajouts = 0
+        alertes_envoyees = 0
         
         for art in articles:
+            # Insertion en base
             query = "INSERT IGNORE INTO articles (date, source, titre, lien) VALUES (%s, %s, %s, %s)"
             valeurs = (art['date'], art['source'], art['titre'], art['lien'])
             cursor.execute(query, valeurs)
+            
+            # Si rowcount > 0, c'est que l'article est NOUVEAU (pas un doublon)
             if cursor.rowcount > 0:
                 ajouts += 1
                 
+                # --- [NOUVEAU] VÉRIFICATION ALERTES ---
+                # On calcule le score seulement si l'article est nouveau
+                score = calculer_score(art['titre'])
+                
+                # SEUIL D'ALERTE : 4 points
+                # (Ex: "Ransomware" (3) + "Linux" (1) = 4 -> ALERTE)
+                if score >= 4:
+                    notifier_n8n(art, score)
+                    alertes_envoyees += 1
+                    console.print(f"[bold red]🔥 ALERTE ENVOYÉE : {art['titre']} (Score: {score})[/bold red]")
+
         conn.commit()
-        logging.info(f"Succès SQL : {ajouts} articles ajoutés.")
+        logging.info(f"Succès SQL : {ajouts} ajouts, {alertes_envoyees} alertes envoyées.")
         return ajouts
     except mysql.connector.Error as err:
         console.print(f"[error]❌ Erreur MySQL : {err}[/error]")
@@ -134,7 +191,7 @@ def sauvegarder_mysql(articles):
 
 def main():
     logging.info("--- DÉMARRAGE DU SCRAPER ---")
-    console.print(Panel.fit("🤖 [bold cyan]Scraper de Veille Technologique[/bold cyan]", border_style="blue"))
+    console.print(Panel.fit("🤖 [bold cyan]Scraper de Veille Technologique v2[/bold cyan]", border_style="blue"))
     
     tous_les_articles = []
 
@@ -198,9 +255,9 @@ def main():
         console.print("[dim]🤖 Mode automatique : Sauvegarde complète.[/dim]")
         articles_a_sauvegarder = tous_les_articles
 
-    # --- ÉTAPE 3 : SAUVEGARDE ---
+    # --- ÉTAPE 3 : SAUVEGARDE & NOTIFICATIONS ---
     if articles_a_sauvegarder:
-        with console.status("[bold green]Sauvegarde en base de données...[/bold green]"):
+        with console.status("[bold green]Sauvegarde et Analyse IA...[/bold green]"):
             nb_ajouts = sauvegarder_mysql(articles_a_sauvegarder)
         
         console.print(Panel(f"✅ TERMINÉ\n[bold green]{nb_ajouts} nouveaux articles ajoutés[/bold green]", border_style="green"))

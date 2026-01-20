@@ -2,43 +2,52 @@
 # 🛡️ Cyber-Watch : Veille Technologique & Cyber-Intelligence
 
 ![Python](https://img.shields.io/badge/Python-3.11%2B-blue?style=for-the-badge&logo=python&logoColor=white)
-![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?style=for-the-badge&logo=mysql&logoColor=white)
-![Scraping](https://img.shields.io/badge/BeautifulSoup-Scraping-green?style=for-the-badge)
+![Docker](https://img.shields.io/badge/Docker-Container-blue?style=for-the-badge&logo=docker&logoColor=white)
+![n8n](https://img.shields.io/badge/n8n-Automation-EA4B71?style=for-the-badge&logo=n8n&logoColor=white)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)
 
-**Cyber-Watch** est une plateforme de veille technologique automatisée orientée Cybersécurité et DevOps. 
-Plus qu'un simple agrégateur RSS, elle intègre un **moteur d'analyse sémantique** capable de scorer les articles selon leur criticité (Ransomware, 0-Day, Failles) pour prioriser la lecture des experts.
+**Cyber-Watch** est une plateforme de veille technologique automatisée et conteneurisée, orientée Cybersécurité et DevOps.
+
+Au-delà de l'agrégation RSS, le projet intègre un pipeline **ETL** (Extract, Transform, Load) complet : collecte Python, stockage SQL, analyse sémantique (Scoring) et **orchestration d'alertes en temps réel via n8n et Discord**.
 
 ---
 
-## 🚀 Pourquoi ce projet ?
+## 🚀 Architecture Technique
 
-Dans le flux continu d'informations technologiques, le défi n'est plus de trouver l'information, mais de **filtrer le bruit**. 
-Cyber-Watch répond à ce besoin via :
-1.  **Centralisation** : Sources Françaises (ANSSI, Zataz) et Internationales (The Hacker News, BleepingComputer).
-2.  **Qualification** : Algorithme de pondération par mots-clés.
-3.  **Visualisation** : Dashboard BI pour piloter la veille.
+Le système repose sur 4 piliers interconnectés :
+
+1.  **Collecte (Python)** : Scraper multi-threadé qui interroge ~20 sources (ANSSI, BleepingComputer, etc.).
+2.  **Intelligence (Algo)** : Moteur de scoring qui détecte les mots-clés critiques (*Ransomware, CVE, 0-Day*).
+3.  **Stockage (MySQL)** : Base de données relationnelle avec gestion d'unicité.
+4.  **Notification (Docker + n8n)** : Envoi automatique d'alertes formatées sur Discord pour les menaces critiques (Score ≥ 4).
 
 ---
 
 ## ⚙️ Fonctionnalités Clés
 
-### 1. Collecte Intelligente (`scraper.py`)
-* **Multi-Sources & Hybride** : Scrape ~20 flux RSS majeurs (Cyber, Dev, Cloud).
-* **Contournement de Protections** : Gestion des *User-Agents* et certificats SSL pour les sites gouvernementaux/protégés.
-* **Nettoyage** : Déduplication automatique via SQL pour éviter les doublons.
+### 1. Collecte & Filtrage (`scraper.py`)
+* **Hybride** : Gestion des flux RSS et parsing HTML (BeautifulSoup).
+* **Robustesse** : Contournement des protections (User-Agents, SSL) pour les sites gouvernementaux.
+* **Déduplication** : Vérification en base avant insertion.
 
 ### 2. Moteur de Pertinence (Scoring)
-L'application analyse chaque titre d'article et attribue un score de **0 à 10** selon des poids définis :
-* 🔴 **Critique (+3 pts)** : *Ransomware, 0-day, Breach, CVE, Faille...*
-* 🟠 **Important (+2 pts)** : *ANSSI, GDPR, Python, Docker, Cyber...*
+Chaque article reçoit un score de **0 à 10** selon sa criticité :
+* 🔴 **Critique (+3 pts)** : *Ransomware, 0-day, Breach, CVE, Faille...* -> **Déclenche une alerte Discord**.
+* 🟠 **Important (+2 pts)** : *ANSSI, GDPR, Python, Docker...*
 * 🔵 **Contexte (+1 pt)** : *Windows, Update, Web, Tech...*
 
-### 3. Dashboard Business Intelligence (`dashboard.py`)
-* **Fil d'actualité Priorisé** : Les articles critiques remontent automatiquement en haut de liste avec une barre de progression visuelle.
-* **Analyse de Tendances** : Nuage de mots-clés (WordCloud) généré dynamiquement (Stopwords FR/EN filtrés).
-* **KPIs Temps Réel** : Volume d'articles, sources les plus actives, nombre d'alertes "Hot" 🔥.
-* **Filtres Avancés** : Recherche textuelle instantanée, filtrage par source et date.
+### 3. Automatisation & Alerting (`n8n`)
+Un conteneur Docker **n8n** écoute les webhooks envoyés par le script Python.
+* Réception des données (Titre, Source, Lien, Score).
+* Formatage du message (Rich text).
+* Dispatch vers un channel Discord dédié à la veille.
+
+### 4. Dashboard BI (`dashboard.py`)
+Interface Streamlit pour la consultation à froid :
+* Fil d'actualité priorisé par score.
+* Nuage de mots-clés dynamique (WordCloud).
+* Statistiques sur les sources les plus actives.
 
 ---
 
@@ -46,12 +55,12 @@ L'application analyse chaque titre d'article et attribue un score de **0 à 10**
 
 ```bash
 VeilleTechScraper/
-├── scraper.py       # Backend : Collecte, Parsing XML, Insertion BDD
-├── dashboard.py     # Frontend : Interface Streamlit, Algo de Scoring, Dataviz
-├── recherche.py     # CLI : Interface terminal rapide (Rich)
-├── requirements.txt # Dépendances
-├── .env             # Variables d'environnement (Non versionné)
-└── README.md        # Documentation
+├── scraper.py           # Backend : Collecte, Scoring, Webhook vers n8n
+├── dashboard.py         # Frontend : Interface Streamlit & Dataviz
+├── n8n_automation.json  # Workflow d'automatisation (Import n8n)
+├── requirements.txt     # Dépendances Python
+├── .env                 # Secrets (DB, etc.)
+└── README.md            # Documentation
 
 ```
 
@@ -62,9 +71,10 @@ VeilleTechScraper/
 ### 1. Prérequis
 
 * Python 3.10+
-* Serveur MySQL (Local ou Distant)
+* Docker & Docker Compose
+* Serveur MySQL
 
-### 2. Installation
+### 2. Installation Python & BDD
 
 ```bash
 git clone [https://github.com/Flowz5/VeilleTechScraper.git](https://github.com/Flowz5/VeilleTechScraper.git)
@@ -73,14 +83,11 @@ cd VeilleTechScraper
 # Environnement virtuel
 python -m venv venv
 source venv/bin/activate  # Linux/Mac
-# .\venv\Scripts\activate # Windows
 
 # Dépendances
 pip install -r requirements.txt
 
 ```
-
-### 3. Configuration (.env)
 
 Créez un fichier `.env` à la racine :
 
@@ -89,35 +96,59 @@ DB_HOST=localhost
 DB_USER=root
 DB_PASSWORD=votre_mot_de_passe
 DB_NAME=veille_tech
+# (L'URL n8n est configurée dans le script scraper.py)
 
 ```
 
-### 4. Lancer l'application
+### 3. Mise en place de l'Automatisation (n8n)
 
-**Étape 1 : Récupérer les articles**
+Lancer le conteneur n8n (avec persistance des données) :
 
 ```bash
-python scraper.py
+docker run -d \
+  --name n8n \
+  -p 5678:5678 \
+  -v ~/.n8n:/home/node/.n8n:Z \
+  --restart always \
+  docker.n8n.io/n8nio/n8n
 
 ```
 
-**Étape 2 : Lancer le Dashboard**
+**Configuration du Workflow :**
+
+1. Accéder à `http://localhost:5678`.
+2. Cliquer sur **"Add workflow"** > **"Import from..."** > **"File"**.
+3. Sélectionner le fichier `n8n_automation.json` présent dans ce dépôt.
+4. Double-cliquer sur le nœud **Discord**.
+5. Dans "Credential", créez un nouveau "Discord Webhook account" et collez **votre propre URL de Webhook Discord**.
+6. **Activez** le workflow (Bouton en haut à droite).
+
+### 4. Utilisation
+
+**Mode Manuel :**
 
 ```bash
-streamlit run dashboard.py
+python scraper.py        # Récupère les articles et alerte si critique
+streamlit run dashboard.py # Lance l'interface visuelle
 
 ```
 
-*Le navigateur s'ouvrira automatiquement sur http://localhost:8501*
+**Mode Automatique (Cron) :**
+Ajouter au crontab pour une exécution tous les matins à 8h00 :
+
+```bash
+0 8 * * * /chemin/vers/venv/bin/python /chemin/vers/scraper.py >> /chemin/vers/cron.log 2>&1
+
+```
 
 ---
 
-## 🐧 Intégration Linux (Hyprland / Bash)
+## 🐧 Intégration Linux (Alias)
 
-Pour les utilisateurs avancés, ajoutez ces alias dans votre `.bashrc` ou `.zshrc` pour lancer votre veille en une commande :
+Pour les utilisateurs avancés (Hyprland / Bash / Zsh) :
 
 ```bash
-alias cyberwatch="cd ~/Chemin/Vers/VeilleTechScraper && source venv/bin/activate && streamlit run dashboard.py"
-alias cyberscrape="cd ~/Chemin/Vers/VeilleTechScraper && source venv/bin/activate && python scraper.py"
+alias cyberwatch="cd ~/Projets/VeilleTechScraper && source venv/bin/activate && streamlit run dashboard.py"
+alias cyberscrape="cd ~/Projets/VeilleTechScraper && source venv/bin/activate && python scraper.py"
 
 ```

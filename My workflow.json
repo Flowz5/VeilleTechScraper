@@ -1,0 +1,69 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "alert",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "a1a85116-02ea-4b7f-903b-b499de697ba6",
+      "name": "Webhook",
+      "webhookId": "b2a57a20-4299-4005-a8a6-aa448669f800"
+    },
+    {
+      "parameters": {
+        "authentication": "webhook",
+        "content": "=🚨 **ALERTE CYBER** 🚨\n\n📰 **Titre :** {{ $json.body.titre }}\n📢 **Source :** {{ $json.body.source }}\n🔗 **Lien :** {{ $json.body.lien }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.discord",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "f4a1ccda-c43e-41a7-b307-74d1c11fbde3",
+      "name": "Discord",
+      "webhookId": "e5cca12b-9528-4c0a-a69a-3e37342383f2",
+      "credentials": {
+        "discordWebhookApi": {
+          "id": "ux2hFRqgEgkJrGEL",
+          "name": "Discord Webhook account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Discord",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "acbd1f1a-1cc6-493c-b8ab-8b3498d68972",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "bf9644b279da227d0554ed2ff5102dd394e9cc816fe90086e24a2563a70f3441"
+  },
+  "id": "Pm_m2CF14eri19ET9Vray",
+  "tags": []
+}
