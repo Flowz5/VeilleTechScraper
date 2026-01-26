@@ -176,7 +176,7 @@ def sauvegarder_mysql(articles):
                 
                 # SEUIL D'ALERTE : 4 points
                 # (Ex: "Ransomware" (3) + "Linux" (1) = 4 -> ALERTE)
-                if score >= 3:
+                if score >= 2:
                     notifier_n8n(art, score)
                     alertes_envoyees += 1
                     console.print(f"[bold red]🔥 ALERTE ENVOYÉE : {art['titre']} (Score: {score})[/bold red]")
