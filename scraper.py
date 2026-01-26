@@ -62,27 +62,31 @@ SOURCES = {
     "[CYBER 🇺🇸] BleepingComputer": "https://www.bleepingcomputer.com/feed/",
     "[CYBER 🇺🇸] Google Security Blog": "https://security.googleblog.com/feeds/posts/default",
     
+    # --- SISR : ADMIN SYS, RÉSEAU & WINDOWS (NOUVEAU 🚀) ---
+    "[SISR] Tech2Tech (Tutos FR)": "https://www.tech2tech.fr/feed/",
+    "[SISR] IT-Connect (Cours & Tutos)": "https://www.it-connect.fr/feed/",
+    "[SISR] Culture Informatique": "https://www.culture-informatique.net/feed/",
+    "[RESEAU 🇺🇸] Cisco Blog": "https://feeds.feedburner.com/CiscoBlogSecurity",
+    "[RESEAU 🇺🇸] Network World": "https://www.networkworld.com/feed/",
+    
+    # --- INFRA, LINUX & CLOUD ---
+    "[LINUX] LinuxFR.org": "https://linuxfr.org/news.atom",
+    "[LINUX] Toolinux": "http://feeds.feedburner.com/toolinux",
+    "[CLOUD] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
+    "[CLOUD 🇺🇸] AWS What's New": "https://aws.amazon.com/about-aws/whats-new/recent/feed/",
+    "[DEVOPS 🇺🇸] Docker Blog": "https://www.docker.com/blog/feed/",
+    
     # --- DÉVELOPPEMENT & PYTHON ---
     "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
     "[DEV] Journal du Hacker": "https://www.journalduhacker.net/rss",
-    "[DEV] GitHub Blog": "https://github.blog/feed/",
     "[DEV 🇺🇸] Real Python": "https://realpython.com/atom.xml",
     "[DEV 🇺🇸] Dev.to": "https://dev.to/feed",
-    
-    # --- INFRA, LINUX & CLOUD ---
-    "[INFRA] IT Connect": "https://www.it-connect.fr/feed/",
-    "[INFRA] LinuxFR.org": "https://linuxfr.org/news.atom",
-    "[INFRA] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
-    "[INFRA] Toolinux": "http://feeds.feedburner.com/toolinux",
-    "[INFRA 🇺🇸] AWS What's New": "https://aws.amazon.com/about-aws/whats-new/recent/feed/",
     
     # --- TECH, IA & DATA ---
     "[IA] Actu IA": "https://www.actuia.com/feed/",
     "[TECH] Next": "https://next.ink/feed/", 
     "[TECH] Korben": "https://korben.info/feed",
-    "[IA 🇺🇸] OpenAI Blog": "https://openai.com/blog/rss.xml",
-    "[DATA 🇺🇸] KDnuggets": "https://www.kdnuggets.com/feed",
-    "[SCIENCE] Numerama": "https://www.numerama.com/feed/"
+    "[IA 🇺🇸] OpenAI Blog": "https://openai.com/blog/rss.xml"
 }
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
