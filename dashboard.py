@@ -1,3 +1,20 @@
+"""
+=============================================================================
+PROJET : CYBER-WATCH DASHBOARD (STREAMLIT)
+DATE   : 18-19 Février 2026
+DEV    : Léo
+=============================================================================
+
+LOG :
+--------
+[18/02 23:15] Setup de base Streamlit + connexion MySQL.
+[19/02 10:20] Mise en cache des datas (ttl=600) sinon la page met 10 ans à charger.
+[19/02 11:45] Ajout du système de scoring pondéré direct dans pandas. Les alertes critiques remontent bien.
+[19/02 13:30] Grosse galère avec les stopwords du WordCloud qui prenaient trop de place. Fixé.
+[19/02 13:45] Refonte UI de la table. Remplacement du score brut (moche) par une ProgressColumn. C'est clean.
+=============================================================================
+"""
+
 import streamlit as st
 import mysql.connector
 import pandas as pd
@@ -7,24 +24,22 @@ import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 from datetime import datetime, timedelta
 
-# --- CONFIGURATION UTILISATEUR ---
-# Liste des mots qui t'intéressent. Plus un article en contient, plus il sera bien noté.
 # --- CONFIGURATION AVANCÉE (POIDS) ---
-# Format : "mot_clé": score (1=Normal, 2=Important, 3=Critique)
+# 3 = Alerte rouge, 2 = Important, 1 = Bruit de fond utile
 MES_MOTS_CLES = {
-    # 🔴 CRITIQUE (Menaces & Urgences)
+    # CRITIQUE (Menaces & Urgences)
     "ransomware": 3, "0-day": 3, "zero-day": 3, "faille": 3, "vulnerabilité": 3,
     "cve": 3, "breach": 3, "fuite": 3, "piratage": 3, "hacked": 3, "exploit": 3,
     "rce": 3, "critique": 3, "urgence": 3, "alert": 3,
 
-    # 🟠 IMPORTANT (Cyber & Outils majeurs)
+    # IMPORTANT (Cyber & Outils majeurs)
     "cyber": 2, "sécurité": 2, "security": 2, "anssi": 2, "malware": 2,
     "phishing": 2, "ddos": 2, "rootkit": 2, "spyware": 2, "botnet": 2,
     "gdpr": 2, "rgpd": 2, "cnil": 2, "cert": 2, "soc": 2, "siem": 2,
     "docker": 2, "kubernetes": 2, "linux": 2, "python": 2, "ai": 2, "ia": 2,
     "chatgpt": 2, "gpt": 2, "openai": 2,
 
-    # 🔵 NORMAL (Tech & Langages)
+    # NORMAL (Tech & Langages)
     "windows": 1, "microsoft": 1, "apple": 1, "google": 1, "aws": 1, "azure": 1,
     "cloud": 1, "server": 1, "data": 1, "javascript": 1, "react": 1, "node": 1,
     "php": 1, "java": 1, "c#": 1, "c++": 1, "rust": 1, "go": 1, "sql": 1,
@@ -39,7 +54,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Chargement des variables
 load_dotenv()
 
 DB_CONFIG = {
@@ -49,7 +63,8 @@ DB_CONFIG = {
     'database': os.getenv('DB_NAME')
 }
 
-# --- FONCTION CHARGEMENT (CACHE) ---
+# --- CACHE ---
+# Indispensable pour pas exploser la BDD à chaque clic sur l'interface
 @st.cache_data(ttl=600)
 def load_data():
     try:
@@ -57,19 +72,19 @@ def load_data():
         query = "SELECT date, source, titre, lien FROM articles ORDER BY date DESC LIMIT 20000"
         df = pd.read_sql(query, conn)
         conn.close()
-        # Conversion forcée en datetime pour les filtres
+        # On force le format datetime direct pour simplifier les filtres plus bas
         df['date'] = pd.to_datetime(df['date'])
         return df
     except Exception as e:
         return None
 
 def calculer_score(titre):
-    """Calcule le score en fonction des poids définis"""
+    # Sécu basique si le scraper a ramené de la merde
     if not isinstance(titre, str): return 0
+    
     score = 0
     titre_min = titre.lower()
     
-    # On parcourt notre dictionnaire (mot, poids)
     for mot, poids in MES_MOTS_CLES.items():
         if mot in titre_min:
             score += poids
@@ -87,30 +102,31 @@ st.markdown("""
 
 st.divider()
 
-# --- CHARGEMENT ---
+# --- INIT DATAS ---
 df = load_data()
 
+# Gestion des erreurs fatales
 if df is None:
     st.error("❌ Erreur de connexion BDD.")
     st.stop()
 if df.empty:
-    st.warning("⚠️ Base de données vide.")
+    st.warning("⚠️ Base de données vide. Fais tourner le scraper d'abord.")
     st.stop()
 
 # ==========================================
-#      SIDEBAR (ÉPURÉE)
+#      SIDEBAR 
 # ==========================================
 
 st.sidebar.header("🔍 Configuration")
 
-# 1. FILTRE TEMPOREL
+# 1. Filtre date
 st.sidebar.subheader("Période")
 days_back = st.sidebar.slider("Historique (Jours)", min_value=1, max_value=365, value=90)
 min_date = datetime.now() - timedelta(days=days_back)
 
 st.sidebar.markdown("---")
 
-# 2. FILTRES DE RECHERCHE
+# 2. Filtres classiques
 st.sidebar.subheader("Filtres")
 search_query = st.sidebar.text_input("Mots-clés (Titre)", placeholder="Ex: Ransomware...")
 all_sources = sorted(df['source'].unique())
@@ -119,27 +135,27 @@ selected_sources = st.sidebar.multiselect("Sources", all_sources)
 # --- APPLICATION DES FILTRES ---
 filtered_df = df.copy()
 
-# 1. Filtre Date
+# Date
 filtered_df = filtered_df[filtered_df['date'] >= min_date]
 
-# 2. Filtre Source
+# Sources
 if selected_sources:
     filtered_df = filtered_df[filtered_df['source'].isin(selected_sources)]
 
-# 3. Filtre Recherche Texte (Barre de recherche)
+# Recherche texte (case insensitive)
 if search_query:
     filtered_df = filtered_df[filtered_df['titre'].str.contains(search_query, case=False)]
 
-# --- CALCUL DE LA PERTINENCE (NOUVEAU) ---
-# On applique la notation sur chaque ligne
+# --- SCORING & TRI ---
+# Applique la notation ligne par ligne
 filtered_df['score'] = filtered_df['titre'].apply(calculer_score)
 
-# On trie : Les meilleurs scores en haut, puis par date récente
+# Le tri ultime : d'abord le score (criticité), ensuite la date pour départager
 filtered_df = filtered_df.sort_values(by=['score', 'date'], ascending=[False, False])
 
 st.sidebar.markdown("---")
 
-# 3. EXPORT DATA
+# 3. Export
 st.sidebar.subheader("Export")
 csv = filtered_df.to_csv(index=False).encode('utf-8')
 st.sidebar.download_button(
@@ -150,22 +166,21 @@ st.sidebar.download_button(
 )
 
 # ==========================================
-#           FIN SIDEBAR
+#      MAIN CONTENT
 # ==========================================
 
 # --- KPIs ---
-nb_articles_hot = len(filtered_df[filtered_df['score'] > 0]) # Nombre d'articles ayant au moins 1 mot-clé
+nb_articles_hot = len(filtered_df[filtered_df['score'] > 0])
 
 col1, col2, col3, col4 = st.columns(4)
 with col1: st.metric("Total Articles", len(filtered_df))
 with col2: st.metric("Source Top Activité", filtered_df['source'].mode()[0] if not filtered_df.empty else "N/A")
 with col3: st.metric("Dernière M.A.J", str(filtered_df['date'].max().date()) if not filtered_df.empty else "N/A")
-# Ici, on affiche le nombre d'articles "Pertinents" (qui matchent tes mots-clés)
 with col4: st.metric("Articles Pertinents 🔥", f"{nb_articles_hot}") 
 
 st.markdown("---")
 
-# --- VISUALISATION ---
+# --- CHARTS ---
 col_cloud, col_chart = st.columns([1, 1])
 
 with col_cloud:
@@ -173,7 +188,7 @@ with col_cloud:
     if not filtered_df.empty:
         text = " ".join(title for title in filtered_df.titre)
         
-        # TA LISTE DE STOPWORDS (Je te laisse la tienne, elle était très bien)
+        # Gros nettoyage des mots parasites pour avoir un WordCloud pertinent
         stopwords = {
             "le", "la", "les", "des", "du", "en", "un", "une", "pour", "sur", "avec", "par", 
             "dans", "et", "ou", "a", "est", "son", "sa", "ses", "qui", "que", "aux", "ne", 
@@ -220,7 +235,7 @@ with col_cloud:
         fig.patch.set_facecolor('#0e1117')
         st.pyplot(fig, use_container_width=True)
     else:
-        st.info("Pas assez de données.")
+        st.info("Pas assez de données pour le WordCloud.")
 
 with col_chart:
     st.subheader("📊 Volume par Source")
@@ -229,10 +244,10 @@ with col_chart:
     else:
         st.info("Aucune donnée.")
 
-# --- TABLEAU ---
+# --- DATAFRAME ---
 st.subheader("📰 Fil d'Actualité")
 
-# On n'affiche pas la colonne "score" brute (c'est moche), on utilise ColumnConfig pour faire des étoiles
+# Affichage propre avec column_config pour cacher les ID et afficher des barres
 st.dataframe(
     filtered_df,
     column_config={
@@ -242,13 +257,13 @@ st.dataframe(
         "source": "Source",
         "score": st.column_config.ProgressColumn(
             "Intérêt",
-            help="Score calculé selon la criticité des mots-clés",
+            help="Criticité basée sur les mots-clés",
             format="%d",
             min_value=0,
-            max_value=10, # <-- Passe de 3 à 10 pour supporter les gros scores
+            max_value=10, 
         ),
     },
     hide_index=True,
     use_container_width=True,
-    height=600 # Un peu plus grand pour bien voir
+    height=600 
 )

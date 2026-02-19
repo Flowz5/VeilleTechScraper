@@ -1,9 +1,7 @@
 import requests
 
-# L'URL de PRODUCTION (sans le mot "-test")
 N8N_URL = "http://localhost:5678/webhook/alert"
 
-# On simule un article très dangereux (Score élevé)
 fake_article = {
     "titre": "🚨 [TEST] ALERTE RANSOMWARE DÉTECTÉE SUR LE RÉSEAU",
     "source": "Simulation Python",

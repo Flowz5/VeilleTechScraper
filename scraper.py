@@ -1,3 +1,20 @@
+"""
+=============================================================================
+PROJET : SCRAPER DE VEILLE TECH & SISR
+DATE   : 19 Février 2026
+DEV    : Léo
+=============================================================================
+
+LOG :
+--------
+[18/02 22:00] Init v2. Ajout de Rich pour avoir un terminal plus lisible.
+[19/02 09:30] Ajout des sources US (BleepingComputer, HackerNews) pour l'actu 0-day.
+[19/02 11:15] Intégration du système de scoring. Seuil d'alerte à 2 points.
+[19/02 14:30] Connexion au webhook n8n pour push les alertes critiques sur Discord.
+[19/02 18:03] Fix du timeout sur les requêtes n8n. Si le serveur est down, le script continue.
+=============================================================================
+"""
+
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -7,21 +24,19 @@ import sys
 import logging
 from dotenv import load_dotenv
 
-# --- IMPORTS RICH ---
 from rich.console import Console
 from rich.table import Table
 from rich.progress import Progress, SpinnerColumn, BarColumn, TextColumn
 from rich.panel import Panel
 from rich.theme import Theme
 
-# Configuration du thème Rich
+# Theme Rich pour le feedback visuel
 custom_theme = Theme({"success": "green", "warning": "yellow", "error": "bold red", "info": "cyan"})
 console = Console(theme=custom_theme)
 
-# Charger les variables
 load_dotenv()
 
-# --- CONFIGURATION LOGGING ---
+# Log system pour debug post-cron
 logging.basicConfig(
     filename='journal.log',
     level=logging.INFO,
@@ -29,67 +44,31 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S'
 )
 
-# --- [NOUVEAU] CONFIGURATION SCORING & N8N ---
-# URL de ton Webhook n8n (Production)
-# ⚠️ Remplace 'webhook-test' par 'webhook' quand tu actives le switch "Active" dans n8n
+# Webhook local n8n
 N8N_WEBHOOK_URL = "http://localhost:5678/webhook/alert"
 
-# Poids des mots-clés pour le déclenchement d'alerte
+# Dictionnaire de poids pour le tri automatique
 KEYWORDS_WEIGHTS = {
-    # 🔴 CRITIQUE (3 pts)
     "ransomware": 3, "0-day": 3, "faille": 3, "critique": 3, "urgence": 3,
     "cve": 3, "breach": 3, "piratage": 3, "hacked": 3, "exploit": 3, "rce": 3,
-    
-    # 🟠 IMPORTANT (2 pts)
     "cyber": 2, "anssi": 2, "security": 2, "malware": 2, "rootkit": 2,
     "phishing": 2, "ddos": 2, "alert": 2, "vulnerabilité": 2,
-    
-    # 🔵 CONTEXTE (1 pt)
     "python": 1, "linux": 1, "docker": 1, "windows": 1, "google": 1
 }
 
-# --- CONFIGURATION SOURCES ---
+# Mapping des flux RSS par thématique
 SOURCES = {
-    # --- CYBERSÉCURITÉ (FR) ---
     "[CYBER] ANSSI (CERT-FR)": "https://www.cert.ssi.gouv.fr/feed/",
     "[CYBER] Le Monde Informatique": "https://www.lemondeinformatique.fr/flux-rss/rubrique/cybersecurite/rss.xml",
     "[CYBER] Zataz": "https://www.zataz.com/feed/",
-    "[CYBER] ZDNet Sécu": "https://www.zdnet.fr/feeds/rss/actualites/security/",
-    "[CYBER] WeLiveSecurity (ESET)": "https://www.welivesecurity.com/fr/feed/",
-    
-    # --- CYBERSÉCURITÉ (US - Indispensable pour la réactivité) ---
-    "[CYBER 🇺🇸] The Hacker News": "https://feeds.feedburner.com/TheHackersNews",
     "[CYBER 🇺🇸] BleepingComputer": "https://www.bleepingcomputer.com/feed/",
-    "[CYBER 🇺🇸] Google Security Blog": "https://security.googleblog.com/feeds/posts/default",
-    
-    # --- SISR : ADMIN SYS, RÉSEAU & WINDOWS (NOUVEAU 🚀) ---
-    "[SISR] Tech2Tech (Tutos FR)": "https://www.tech2tech.fr/feed/",
     "[SISR] IT-Connect (Cours & Tutos)": "https://www.it-connect.fr/feed/",
-    "[SISR] Culture Informatique": "https://www.culture-informatique.net/feed/",
-    "[RESEAU 🇺🇸] Cisco Blog": "https://feeds.feedburner.com/CiscoBlogSecurity",
-    "[RESEAU 🇺🇸] Network World": "https://www.networkworld.com/feed/",
-    
-    # --- INFRA, LINUX & CLOUD ---
     "[LINUX] LinuxFR.org": "https://linuxfr.org/news.atom",
-    "[LINUX] Toolinux": "http://feeds.feedburner.com/toolinux",
-    "[CLOUD] ZDNet Cloud": "https://www.zdnet.fr/feeds/rss/actualites/cloud-computing/",
-    "[CLOUD 🇺🇸] AWS What's New": "https://aws.amazon.com/about-aws/whats-new/recent/feed/",
-    "[DEVOPS 🇺🇸] Docker Blog": "https://www.docker.com/blog/feed/",
-    
-    # --- DÉVELOPPEMENT & PYTHON ---
-    "[DEV] Developpez.com": "https://www.developpez.com/index/rss",
-    "[DEV] Journal du Hacker": "https://www.journalduhacker.net/rss",
-    "[DEV 🇺🇸] Real Python": "https://realpython.com/atom.xml",
-    "[DEV 🇺🇸] Dev.to": "https://dev.to/feed",
-    
-    # --- TECH, IA & DATA ---
-    "[IA] Actu IA": "https://www.actuia.com/feed/",
-    "[TECH] Next": "https://next.ink/feed/", 
     "[TECH] Korben": "https://korben.info/feed",
     "[IA 🇺🇸] OpenAI Blog": "https://openai.com/blog/rss.xml"
 }
 
-USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/120.0.0.0"
 
 DB_CONFIG = {
     'host': os.getenv('DB_HOST'),
@@ -98,9 +77,8 @@ DB_CONFIG = {
     'database': os.getenv('DB_NAME')
 }
 
-# --- [NOUVEAU] FONCTIONS INTELLIGENTES ---
 def calculer_score(titre):
-    """Calcule la pertinence d'un article"""
+    # Calcul de la pertinence basé sur le titre
     score = 0
     titre_min = titre.lower()
     for mot, poids in KEYWORDS_WEIGHTS.items():
@@ -109,7 +87,7 @@ def calculer_score(titre):
     return score
 
 def notifier_n8n(article, score):
-    """Envoie l'article à n8n pour alerte Discord"""
+    # Push Discord via n8n
     payload = {
         "titre": article['titre'],
         "source": article['source'],
@@ -117,11 +95,10 @@ def notifier_n8n(article, score):
         "score": score
     }
     try:
-        # Timeout court (2s) pour ne pas bloquer le scraper si n8n est éteint
+        # Timeout court pour pas freeze le scraper si n8n est off
         requests.post(N8N_WEBHOOK_URL, json=payload, timeout=2)
     except Exception as e:
-        # On log l'erreur discrètement sans faire planter le script
-        logging.warning(f"Impossible de joindre n8n : {e}")
+        logging.warning(f"Webhook n8n injoignable : {e}")
 
 def recuperer_xml(url):
     headers = {'User-Agent': USER_AGENT}
@@ -134,6 +111,7 @@ def recuperer_xml(url):
         return None
 
 def parser_articles(xml, nom_source):
+    # Parsing XML standard
     soup = BeautifulSoup(xml, 'xml') 
     items = soup.find_all('item')[:100]
     resultats = []
@@ -161,32 +139,27 @@ def sauvegarder_mysql(articles):
         alertes_envoyees = 0
         
         for art in articles:
-            # Insertion en base
+            # INSERT IGNORE pour eviter les doublons
             query = "INSERT IGNORE INTO articles (date, source, titre, lien) VALUES (%s, %s, %s, %s)"
             valeurs = (art['date'], art['source'], art['titre'], art['lien'])
             cursor.execute(query, valeurs)
             
-            # Si rowcount > 0, c'est que l'article est NOUVEAU (pas un doublon)
+            # Traitement des alertes uniquement si l'article est nouveau
             if cursor.rowcount > 0:
                 ajouts += 1
-                
-                # --- [NOUVEAU] VÉRIFICATION ALERTES ---
-                # On calcule le score seulement si l'article est nouveau
                 score = calculer_score(art['titre'])
                 
-                # SEUIL D'ALERTE : 4 points
-                # (Ex: "Ransomware" (3) + "Linux" (1) = 4 -> ALERTE)
+                # Seuil de déclenchement d'alerte
                 if score >= 2:
                     notifier_n8n(art, score)
                     alertes_envoyees += 1
-                    console.print(f"[bold red]🔥 ALERTE ENVOYÉE : {art['titre']} (Score: {score})[/bold red]")
+                    console.print(f"[bold red]ALERTE : {art['titre']} (Score: {score})[/bold red]")
 
         conn.commit()
-        logging.info(f"Succès SQL : {ajouts} ajouts, {alertes_envoyees} alertes envoyées.")
+        logging.info(f"Stats SQL : {ajouts} nouveaux, {alertes_envoyees} alertes.")
         return ajouts
     except mysql.connector.Error as err:
-        console.print(f"[error]❌ Erreur MySQL : {err}[/error]")
-        logging.error(f"Erreur MySQL : {err}")
+        console.print(f"[error]Erreur MySQL : {err}[/error]")
         return 0
     finally:
         if conn and conn.is_connected():
@@ -194,82 +167,52 @@ def sauvegarder_mysql(articles):
             conn.close()
 
 def main():
-    logging.info("--- DÉMARRAGE DU SCRAPER ---")
-    console.print(Panel.fit("🤖 [bold cyan]Scraper de Veille Technologique v2[/bold cyan]", border_style="blue"))
-    
+    console.print(Panel.fit("🤖 Scraper de Veille v2", border_style="blue"))
     tous_les_articles = []
 
-    # --- ÉTAPE 1 : RÉCUPÉRATION ---
+    # Etape 1 : Crawling des flux
     with Progress(
         SpinnerColumn(),
         TextColumn("[progress.description]{task.description}"),
         BarColumn(),
-        TextColumn("{task.percentage:>3.0f}%"),
         console=console
     ) as progress:
-        
-        task = progress.add_task("[green]Récupération des flux...", total=len(SOURCES))
-        
+        task = progress.add_task("Récupération RSS...", total=len(SOURCES))
         for nom_site, url_rss in SOURCES.items():
             xml = recuperer_xml(url_rss)
             if xml:
                 articles_site = parser_articles(xml, nom_site)
                 tous_les_articles.extend(articles_site)
-            else:
-                console.print(f"[warning]⚠️ Échec sur {nom_site}[/warning]")
-                logging.warning(f"Échec flux : {nom_site}")
-            
             progress.advance(task)
 
-    console.print(f"\n[bold]📊 Total récupéré : {len(tous_les_articles)} articles.[/bold]")
-
-    # --- ÉTAPE 2 : FILTRAGE ---
+    # Etape 2 : Tri manuel ou auto
     articles_a_sauvegarder = []
-
     if sys.stdin.isatty():
-        # Mode Interactif
-        logging.info("Mode : Manuel (Interactif)")
-        console.print("\n[bold yellow]👀 MODE INTERACTIF - TRI MANUEL[/bold yellow]")
-        
+        # Mode Manuel
         table = Table(show_header=True, header_style="bold magenta")
-        table.add_column("#", style="dim", width=4)
-        table.add_column("Source", style="cyan", width=25)
-        table.add_column("Titre", style="white")
+        table.add_column("#", width=4)
+        table.add_column("Source", width=25)
+        table.add_column("Titre")
 
         for i, art in enumerate(tous_les_articles):
             table.add_row(str(i+1), art['source'], art['titre'])
-        
         console.print(table)
         
-        choix = console.input("[bold yellow]❌ Numéros à IGNORER (ex: 1,3) ou Entrée : [/bold yellow]")
-        
-        indices_a_ignorer = []
-        if choix.strip():
-            try:
-                indices_a_ignorer = [int(x.strip()) for x in choix.split(',')]
-            except ValueError:
-                console.print("[error]Saisie invalide, tout est conservé.[/error]")
+        choix = console.input("[bold yellow]IDs à ignorer (ex: 1,3) ou Entrée : [/bold yellow]")
+        indices_a_ignorer = [int(x.strip()) for x in choix.split(',')] if choix.strip() else []
 
         for i, art in enumerate(tous_les_articles):
             if (i + 1) not in indices_a_ignorer:
                 articles_a_sauvegarder.append(art)
     else:
-        # Mode Automatique
-        logging.info("Mode : Automatique (Cron/Arrière-plan)")
-        console.print("[dim]🤖 Mode automatique : Sauvegarde complète.[/dim]")
+        # Mode Cron (tout sauvegarder)
         articles_a_sauvegarder = tous_les_articles
 
-    # --- ÉTAPE 3 : SAUVEGARDE & NOTIFICATIONS ---
+    # Etape 3 : Commit
     if articles_a_sauvegarder:
-        with console.status("[bold green]Sauvegarde et Analyse IA...[/bold green]"):
+        with console.status("Sauvegarde..."):
             nb_ajouts = sauvegarder_mysql(articles_a_sauvegarder)
-        
-        console.print(Panel(f"✅ TERMINÉ\n[bold green]{nb_ajouts} nouveaux articles ajoutés[/bold green]", border_style="green"))
-    else:
-        console.print("[warning]Aucun article à sauvegarder.[/warning]")
-        logging.info("Aucun article sauvegardé.")
-
-    logging.info("--- FIN DU SCRAPER ---\n")
-
+        console.print(f"✅ Terminé : {nb_ajouts} nouveaux articles.")
+    
 if __name__ == "__main__":
     main()
