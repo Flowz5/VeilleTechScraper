@@ -1,6 +1,6 @@
 import requests
 
-N8N_URL = "http://localhost:5678/webhook/alert"
+N8N_URL = "http://localhost:5680/webhook-test/alert"
 
 fake_article = {
     "titre": "🚨 [TEST] ALERTE RANSOMWARE DÉTECTÉE SUR LE RÉSEAU",

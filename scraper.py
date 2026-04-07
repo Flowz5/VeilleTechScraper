@@ -45,7 +45,7 @@ logging.basicConfig(
 )
 
 # Webhook local n8n
-N8N_WEBHOOK_URL = "http://localhost:5678/webhook/alert"
+N8N_WEBHOOK_URL = "http://localhost:5680/webhook-test/alert"
 
 # Dictionnaire de poids pour le tri automatique
 KEYWORDS_WEIGHTS = {
