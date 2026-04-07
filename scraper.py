@@ -150,7 +150,7 @@ def sauvegarder_mysql(articles):
                 score = calculer_score(art['titre'])
                 
                 # Seuil de déclenchement d'alerte
-                if score >= 2:
+                if score >= 1:
                     notifier_n8n(art, score)
                     alertes_envoyees += 1
                     console.print(f"[bold red]ALERTE : {art['titre']} (Score: {score})[/bold red]")
